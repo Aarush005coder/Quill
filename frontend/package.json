@@ -15,7 +15,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "axios": "^1.19.0",
-    "docx": "^9.7.1",
+    "docx": "8.5.0",
     "firebase": "^12.18.0",
     "js-cookie": "^3.0.8",
     "jspdf": "^4.2.1",
