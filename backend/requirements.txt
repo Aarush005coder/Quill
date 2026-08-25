@@ -1,0 +1,47 @@
+# Django Core
+Django==5.0.7
+djangorestframework==3.15.2
+django-cors-headers==4.4.0
+django-environ==0.11.2
+
+# Authentication
+djangorestframework-simplejwt==5.3.1
+django-allauth==0.63.6
+PyJWT==2.8.0
+
+# OTP
+django-otp==1.5.0
+pyotp==2.9.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# Async Tasks (Document processing, heavy conversions)
+celery==5.4.0
+django-celery-results==2.5.1
+
+# Translation & AI
+openai==1.37.1
+googletrans==4.0.0rc1
+gTTS==2.5.2
+SpeechRecognition==3.10.4
+pydub==0.25.1
+
+# Document Processing
+python-docx==1.1.2
+PyPDF2==3.0.1
+reportlab==4.2.2
+pdf2docx==0.5.8
+docx2pdf==1.1
+Pillow==10.4.0
+pypdf==4.3.1
+
+# Utilities
+requests==2.32.3
+python-magic==0.4.27
+whitenoise==6.7.0
+gunicorn==22.0.0
+
+# Analytics / Data
+pandas==2.2.2
+numpy==1.26.4

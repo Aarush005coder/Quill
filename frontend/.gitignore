@@ -1,0 +1,28 @@
+# PowerShell mein .gitignore banao
+@"
+# ENV FILES (NEVER PUSH)
+backend/.env
+.env
+.env.*
+
+# BACKEND
+__pycache__/
+*.py[cod]
+env/
+venv/
+db.sqlite3
+backend/media/
+backend/staticfiles/
+
+# FRONTEND
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.local
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+"@ | Out-File -Encoding UTF8 .gitignore

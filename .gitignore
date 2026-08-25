@@ -1,0 +1,34 @@
+# ENV FILES
+backend/.env
+.env
+.env.*
+
+# Allow example files
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# BACKEND
+__pycache__/
+*.py[cod]
+env/
+venv/
+db.sqlite3
+backend/media/
+backend/staticfiles/
+backend/node_modules/
+backend/package.json
+backend/package-lock.json
+backend/celerybeat-schedule*
+
+# FRONTEND
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
