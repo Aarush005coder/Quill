@@ -32,7 +32,7 @@ python-docx==1.1.2
 PyPDF2==3.0.1
 reportlab==4.2.2
 pdf2docx==0.5.8
-docx2pdf==1.1
+docx2pdf
 Pillow==10.4.0
 pypdf==4.3.1
 
