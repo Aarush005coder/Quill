@@ -45,3 +45,5 @@ gunicorn==22.0.0
 # Analytics / Data
 pandas==2.2.2
 numpy==1.26.4
+
+python-dotenv
