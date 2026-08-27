@@ -26,3 +26,10 @@ frontend/.vite/
 .DS_Store
 Thumbs.db
 "@ | Out-File -Encoding UTF8 .gitignore
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
