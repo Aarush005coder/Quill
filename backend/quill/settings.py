@@ -281,6 +281,7 @@ VAPID_ADMIN_EMAIL = env(
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
+    'quill-a52m.onrender.com'
     'quill-aarush01.vercel.app',
     'quill-git-main-aarush01.vercel.app',
     '.onrender.com',  # Render ke liye
@@ -295,3 +296,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Temporary debugging ke liye (baad mein hata dena)
+CORS_ALLOW_ALL_ORIGINS = True
