@@ -234,16 +234,16 @@ const Layout: React.FC = () => {
 
           // Send subscription to backend
           const token = localStorage.getItem("access_token");
-          if (token) {
-            await fetch("http://127.0.0.1:8000/api/users/push-subscription/", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-              },
-              body: JSON.stringify(subscription),
-            });
-          }
+            if (token) {
+              await fetch(`${process.env.REACT_APP_API_URL}/api/users/push-subscription/`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(subscription),
+              });
+            }
         }
       } catch (error) {
         console.error("Push registration failed:", error);

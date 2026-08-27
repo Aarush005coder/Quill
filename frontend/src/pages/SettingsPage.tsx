@@ -2015,7 +2015,7 @@ const ApiConfigModal = ({
                     event.target.value,
                 })
               }
-              placeholder="http://127.0.0.1:8000"
+              placeholder={process.env.REACT_APP_API_URL || "https://your-backend.onrender.com"}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white"
             />
             <p className="mt-1 text-xs text-slate-500">
