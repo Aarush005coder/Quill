@@ -142,10 +142,7 @@ interface AccountActivity {
 /* =========================================================
 API
 ========================================================= */
-const API_BASE = (
-  process.env.REACT_APP_API_URL ||
-  "http://127.0.0.1:8000"
-).replace(/\/+$/, "");
+const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
 
 const getToken = (): string | null => {
   return localStorage.getItem("access_token");

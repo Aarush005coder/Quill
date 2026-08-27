@@ -585,7 +585,7 @@ export default function CombinePage() {
   ========================================================= */
   const fetchHistory = async (tool: typeof tools[0]) => {
     setHistoryLoading(true);
-    const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+    const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "") + "/api";
     const token = await getAuthToken(API_BASE);
     if (!token) { setHistoryLoading(false); return; }
     const url = `${API_BASE}/api/combine/history/?type=${tool.historyType}&page_size=10`;
@@ -908,7 +908,7 @@ export default function CombinePage() {
   ========================================================= */
   const downloadFromHistory = async (item: HistoryItem) => {
     if (!item.download_url) return;
-    const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+    const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
     const token = await getAuthToken(API_BASE);
     if (!token) return;
     try {
@@ -925,7 +925,7 @@ export default function CombinePage() {
   const deleteHistoryItem = async (item: HistoryItem) => {
     setDeletingIds((previous) => new Set(previous).add(item.id));
     setActiveMenuId(null); setMenuPosition(null);
-    const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+    const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
     try {
       const token = await getAuthToken(API_BASE);
       await fetch(`${API_BASE}/api/combine/${item.id}/delete/`, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} });
@@ -937,7 +937,7 @@ export default function CombinePage() {
 
   const clearAllHistory = async () => {
     setClearingHistory(true);
-    const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+    const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
     const token = await getAuthToken(API_BASE);
     for (const item of history) { try { await fetch(`${API_BASE}/api/combine/${item.id}/delete/`, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} }); } catch {} }
     setHistory([]); setClearingHistory(false); setShowClearHistoryModal(false); showToast("success", "All history deleted");
@@ -979,7 +979,7 @@ export default function CombinePage() {
   const handleProcess = async () => {
     if (!activeTool || selectedFiles.length === 0 || !validation.valid || !canProcessEnhance) return;
     setIsProcessing(true); setStatusMsg(null); setProcessedBlob(null); setProcessStep("Preparing files...");
-    const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+    const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
     const formData = new FormData();
     if (activeTool.multiple) selectedFiles.forEach((file) => formData.append("files", file));
     else formData.append("file", selectedFiles[0]);

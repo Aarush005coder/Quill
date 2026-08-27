@@ -1236,9 +1236,7 @@ export default function HistoryPage() {
       }
 
       try {
-        const API_BASE = (
-          process.env.REACT_APP_API_URL || "http://127.0.0.1:8000"
-        ).replace(/\/+$/, "");
+        const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
 
         const response = await fetch(
           `${API_BASE}/api/history/?page=1&page_size=100`,
@@ -1585,14 +1583,7 @@ export default function HistoryPage() {
           "access_token"
         );
 
-      const API_BASE = (
-        process.env
-          .REACT_APP_API_URL ||
-        "http://127.0.0.1:8000"
-      ).replace(
-        /\/+$/,
-        ""
-      );
+      const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
 
       try {
         if (
@@ -1714,14 +1705,7 @@ export default function HistoryPage() {
           "access_token"
         );
 
-      const API_BASE = (
-        process.env
-          .REACT_APP_API_URL ||
-        "http://127.0.0.1:8000"
-      ).replace(
-        /\/+$/,
-        ""
-      );
+      const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
 
       try {
         if (

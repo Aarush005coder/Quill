@@ -7,7 +7,7 @@ if (typeof window !== "undefined") {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`;
 }
 
-const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api").replace(/\/+$/, "");
+const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
 const MAX_DOCUMENT_MB = 250;
 const MAX_DOCUMENT_BYTES = MAX_DOCUMENT_MB * 1024 * 1024;
 

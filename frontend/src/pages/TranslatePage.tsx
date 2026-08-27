@@ -44,10 +44,7 @@ interface TranslationResult {
    API
 ============================================================ */
 
-const API_BASE = (
-  process.env.REACT_APP_API_URL ||
-  "http://127.0.0.1:8000/api"
-).replace(/\/+$/, "");
+const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
 
 const SPEECH_API_PATH =
   process.env.REACT_APP_SPEECH_API_PATH ||
