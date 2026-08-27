@@ -3,6 +3,7 @@ import environ
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
+import dj_database_url
 
 # Load .env file
 load_dotenv()
@@ -112,16 +113,27 @@ TEMPLATES = [
 ]
 
 # ─── DATABASE ──────────────────────────────────────────────────
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME', default='quill'),
-        'USER': env('DB_USER', default='postgres'),
-        'PASSWORD': env('DB_PASSWORD', default='password'),
-        'HOST': env('DB_HOST', default='localhost'),
-        'PORT': env('DB_PORT', default='5432'),
+
+# Render ke liye: agar DATABASE_URL env variable hai toh use karo
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.parse(
+            os.environ.get('DATABASE_URL'),
+            conn_max_age=600
+        )
     }
-}
+else:
+    # Local development ke liye
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': env('DB_NAME', default='quill'),
+            'USER': env('DB_USER', default='postgres'),
+            'PASSWORD': env('DB_PASSWORD', default='password'),
+            'HOST': env('DB_HOST', default='localhost'),
+            'PORT': env('DB_PORT', default='5432'),
+        }
+    }
 
 # ─── CACHES ────────────────────────────────────────────────────
 CACHES = {
@@ -213,13 +225,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# ─── CORS ──────────────────────────────────────────────────────
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-CORS_ALLOW_CREDENTIALS = True
-
 # ─── EMAIL (BREVO SMTP) ────────────────────────────────────────
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -282,3 +287,21 @@ VAPID_ADMIN_EMAIL = env(
     "VAPID_ADMIN_EMAIL",
     default="mailto:khandelwalaarush2@gmail.com",
 )
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'quill-aarush01.vercel.app',
+    'quill-git-main-aarush01.vercel.app',
+    '.onrender.com',  # Render ke liye
+]
+
+# ─── CORS ──────────────────────────────────────────────────────
+
+CORS_ALLOWED_ORIGINS = [
+    "https://quill-aarush01.vercel.app",
+    "https://quill-git-main-aarush01.vercel.app",
+    "http://localhost:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
