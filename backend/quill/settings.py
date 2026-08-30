@@ -228,9 +228,9 @@ EMAIL_TIMEOUT = 10
 
 # ─── EMAIL (CONSOLE - TEMPORARY FIX) ───────────────────────────
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-DEFAULT_FROM_EMAIL = "Quill <khandelwalaarush2@gmail.com>"
+# DEFAULT_FROM_EMAIL = "Quill <khandelwalaarush2@gmail.com>"
 
 # ─── STATIC & MEDIA ────────────────────────────────────────────
 STATIC_URL = '/static/'
