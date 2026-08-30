@@ -4,6 +4,10 @@ import logging
 import requests
 import pyotp
 import random
+import pyotp
+import qrcode       # ✅ ADD THIS
+import base64       # ✅ ADD THIS
+from io import BytesIO  # ✅ ADD THIS
 
 from django.conf import settings
 from django.contrib.auth import get_user_model, update_session_auth_hash
@@ -559,12 +563,35 @@ class TwoFactorSetupView(APIView):
 
     def get(self, request):
         user = request.user
+        
+        # 1. Generate secret if not exists
         if not user.otp_secret:
             user.otp_secret = pyotp.random_base32()
             user.save(update_fields=["otp_secret"])
 
+        # 2. Generate provisioning URI
         uri = pyotp.totp.TOTP(user.otp_secret).provisioning_uri(name=user.email, issuer_name="Quill")
-        return Response({"success": True, "data": {"secret": user.otp_secret, "uri": uri}})
+        
+        # 3. Generate QR Code Image
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(uri)
+        qr.make(fit=True)
+        
+        # 4. Convert Image to Base64 String (Jo frontend ko chahiye)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        
+        # 5. Return both secret, uri, AND the qr_code image
+        return Response({
+            "success": True, 
+            "data": {
+                "secret": user.otp_secret, 
+                "uri": uri,
+                "qr_code": f"data:image/png;base64,{qr_base64}"  # ✅ Yeh frontend ko chahiye!
+            }
+        })
 
 
 # ============================================================
