@@ -222,6 +222,7 @@ EMAIL_HOST = "smtp-relay.brevo.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env("BREVO_SMTP_LOGIN", default="")
+EMAIL_HOST_PASSWORD = env("BREVO_SMTP_KEY", default="")
 BREVO_API_KEY = env("BREVO_API_KEY", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="")
 EMAIL_TIMEOUT = 10
