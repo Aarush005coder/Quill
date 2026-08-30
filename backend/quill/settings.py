@@ -217,21 +217,27 @@ SOCIALACCOUNT_PROVIDERS = {
 
 # ─── EMAIL (BREVO SMTP) ────────────────────────────────────────
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
-EMAIL_HOST = env("BREVO_SMTP_HOST", default="smtp-relay.brevo.com")
-EMAIL_PORT = env.int("BREVO_SMTP_PORT", default=587)
-EMAIL_USE_TLS = env.bool("BREVO_SMTP_USE_TLS", default=True)
+# EMAIL_HOST = env("BREVO_SMTP_HOST", default="smtp-relay.brevo.com")
+# EMAIL_PORT = env.int("BREVO_SMTP_PORT", default=587)
+# EMAIL_USE_TLS = env.bool("BREVO_SMTP_USE_TLS", default=True)
 
-EMAIL_HOST_USER = env("BREVO_SMTP_LOGIN", default="")
-EMAIL_HOST_PASSWORD = env("BREVO_SMTP_KEY", default="").strip()
+# EMAIL_HOST_USER = env("BREVO_SMTP_LOGIN", default="")
+# EMAIL_HOST_PASSWORD = env("BREVO_SMTP_KEY", default="").strip()
 
-DEFAULT_FROM_EMAIL = env(
-    "DEFAULT_FROM_EMAIL",
-    default="Quill <khandelwalaarush2@gmail.com>",
-)
+# DEFAULT_FROM_EMAIL = env(
+#     "DEFAULT_FROM_EMAIL",
+#     default="Quill <khandelwalaarush2@gmail.com>",
+# )
 
-EMAIL_TIMEOUT = 60
+# EMAIL_TIMEOUT = 60
+
+# ─── EMAIL (CONSOLE - TEMPORARY FIX) ───────────────────────────
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+DEFAULT_FROM_EMAIL = "Quill <khandelwalaarush2@gmail.com>"
 
 # ─── STATIC & MEDIA ────────────────────────────────────────────
 STATIC_URL = '/static/'
