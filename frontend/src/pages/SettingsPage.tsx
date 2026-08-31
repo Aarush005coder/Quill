@@ -880,7 +880,7 @@ const TwoFactorSetupModal = ({
       const token = getToken();
       const response =
         await fetch(
-          `${API_BASE}/api/auth/2fa/verify/`,
+          `${API_BASE}/auth/2fa/verify/`,
           {
             method: "POST",
             headers: {
