@@ -942,7 +942,13 @@ export default function CombinePage() {
     const token = await getAuthToken(API_BASE);
     if (!token) return;
     try {
-      const response = await fetch(`${API_BASE}${item.download_url}`, { headers: { Authorization: `Bearer ${token}` } });
+      // FIX: Double /api/ ko rokne ke liye
+      let downloadUrl = item.download_url;
+      if (downloadUrl.startsWith('/api/')) {
+        downloadUrl = downloadUrl.replace('/api/', '/');
+      }
+      
+      const response = await fetch(`${API_BASE}${downloadUrl}`, { headers: { Authorization: `Bearer ${token}` } });
       if (response.ok) { triggerDownload(await response.blob(), item.output_name || "download"); showToast("success", "Download successfully!"); }
     } catch (error) { console.error("Download error:", error); }
   };
@@ -980,7 +986,20 @@ export default function CombinePage() {
     setActiveMenuId(null); setMenuPosition(null);
   };
 
-  const getShareUrl = (item: HistoryItem) => `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}${item.download_url}`;
+  const getShareUrl = (item: HistoryItem) => {
+    // Agar download_url nahi hai, toh empty string return kardo
+    if (!item.download_url) return "";
+    
+    let url = item.download_url;
+    
+    // FIX: Double /api/ ko rokne ke liye
+    if (url.startsWith('/api/')) {
+      url = url.replace('/api/', '/');
+    }
+    
+    return `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}${url}`;
+  };
+
   const openShareModal = (item: HistoryItem) => { setShareItem(item); setShowShareModal(true); setCopiedLink(false); };
   const copyShareLink = async (item: HistoryItem) => {
     const url = getShareUrl(item);
