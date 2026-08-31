@@ -578,7 +578,7 @@ Quill is built using a modern **full-stack technology ecosystem** combining a re
 │                       QUILL                              │
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
-│  🎨 Frontend                                             │
+│  🎨 Frontend                                            │
 │  React • TypeScript • Tailwind CSS • React Query         │
 │  Zustand • Axios • PDF.js • Mammoth • jsPDF              │
 │                                                          │
@@ -589,13 +589,13 @@ Quill is built using a modern **full-stack technology ecosystem** combining a re
 │                                                          │
 │                         ↓                                │
 │                                                          │
-│  🗄️ Data & Processing                                    │
-│  PostgreSQL • Celery • FFmpeg • FFprobe • PyDub         │
+│  🗄️ Data & Processing                                   │
+│  PostgreSQL • Celery • FFmpeg • FFprobe • PyDub          │
 │                                                          │
 │                         ↓                                │
 │                                                          │
-│  🔌 External Services                                    │
-│  OAuth • Translation APIs • SMTP • Speech Services      │
+│  🔌 External Services                                   │
+│  OAuth • Translation APIs • SMTP • Speech Services       │
 │                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -604,6 +604,7 @@ Quill is built using a modern **full-stack technology ecosystem** combining a re
 
 # 📁 Project Structure
 
+```text
 Quill/
 │
 ├── frontend/
@@ -615,6 +616,7 @@ Quill/
 │   │   ├── services/
 │   │   ├── store/
 │   │   └── ...
+│   │
 │   ├── package.json
 │   ├── package-lock.json
 │   └── ...
@@ -637,257 +639,664 @@ Quill/
 │
 ├── .gitignore
 └── README.md
+```
 
 ---
 
 # ⚡ Local Development
 
-**1. Clone the repository**
+Follow the steps below to run **Quill locally**.
 
+## 1. Clone the Repository
+
+```bash
 git clone https://github.com/Aarush005coder/Quill.git
 cd Quill
+```
 
-**2. Frontend setup**
+---
 
-- cd frontend
-- npm install
-- npm start
+## 2. Frontend Setup
 
-Frontend:
+Open a terminal and navigate to the frontend:
 
-- http://localhost:3000
-- Production build
-- npm run build
+```bash
+cd frontend
+```
 
-**3. Backend setup**
+Install the required dependencies:
 
-Open a second terminal:
+```bash
+npm install
+```
 
-- cd backend
-- python -m venv venv
+Start the development server:
 
-Windows
+```bash
+npm start
+```
 
-- venv\Scripts\activate
-- Install dependencies
-- pip install -r requirements.txt
-- Run migrations
-- python manage.py migrate
-- Start Django
-- python manage.py runserver
+The frontend will be available at:
 
-Backend:
+**http://localhost:3000**
 
-http://127.0.0.1:8000
+### Production Build
+
+To create an optimized production build:
+
+```bash
+npm run build
+```
+
+---
+
+## 3. Backend Setup
+
+Open a **second terminal** and navigate to the backend:
+
+```bash
+cd backend
+```
+
+Create a Python virtual environment:
+
+```bash
+python -m venv venv
+```
+
+### Windows
+
+Activate the virtual environment:
+
+```powershell
+venv\Scripts\activate
+```
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Run Database Migrations
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Create Admin User
+
+```bash
+python manage.py createsuperuser
+```
+
+### Start Django Server
+
+```bash
+python manage.py runserver
+```
+
+The backend API will be available at:
+
+**http://127.0.0.1:8000**
+
+---
+
+## 🔄 Local Development Flow
+
+```text
+                    👤 Developer
+                         │
+              ┌──────────┴──────────┐
+              │                     │
+              ▼                     ▼
+      🎨 Frontend Terminal    ⚙️ Backend Terminal
+              │                     │
+              ▼                     ▼
+        npm install             venv
+              │                     │
+              ▼                     ▼
+          npm start          pip install -r
+                                    │
+                                    ▼
+                           python manage.py migrate
+                                    │
+                                    ▼
+                           python manage.py runserver
+```
+
+---
+
+## 🌐 Local URLs
+
+| Service | URL |
+|---|---|
+| 🎨 **Frontend** | http://localhost:3000 |
+| ⚙️ **Backend API** | http://127.0.0.1:8000 |
+| 🔧 **Django Admin** | http://127.0.0.1:8000/admin/ |
 
 ---
 
 # 🔑 Environment Variables
 
-Never commit production secrets to GitHub.
+Quill uses **environment variables** to keep sensitive configuration and service credentials outside the source code.
 
-### Frontend
+> ⚠️ **Never commit production secrets to GitHub.**
 
-**Create:**
+---
+
+## 🎨 Frontend Environment
+
+Create a file named:
+
+```text
 frontend/.env
+```
 
-**Example:**
+### Local Development
 
-**REACT_APP_API_URL=http://127.0.0.1:8000/api**
-For production, replace the local URL with the deployed backend API URL.
+```env
+REACT_APP_API_URL=http://127.0.0.1:8000/api
+```
 
-### Backend
+### Production
 
-**Create:**
+For the deployed application, use the Render backend:
+
+```env
+REACT_APP_API_URL=https://quill-a52m.onrender.com/api
+```
+
+> 🚫 **Do not use `localhost` or `127.0.0.1` in production.**
+
+---
+
+## ⚙️ Backend Environment
+
+Create a file named:
+
+```text
 backend/.env
+```
 
-**Example:**
+Example configuration:
 
-- SECRET_KEY=your-secret-key
-- DEBUG=True
-- ALLOWED_HOSTS=localhost,127.0.0.1
-- BACKEND_URL=http://127.0.0.1:8000
-- FRONTEND_URL=http://localhost:3000
+```env
+# ─── Django ──────────────────────────────────────────────
+SECRET_KEY=your-secret-key
+DEBUG=True
 
-- DB_NAME=quill
-- DB_USER=postgres
-- DB_PASSWORD=your-db-password
-- DB_HOST=localhost
-- DB_PORT=5432
+ALLOWED_HOSTS=localhost,127.0.0.1
 
-- GOOGLE_CLIENT_ID=
-- GOOGLE_CLIENT_SECRET=
+# ─── Application URLs ───────────────────────────────────
+BACKEND_URL=http://127.0.0.1:8000
+FRONTEND_URL=http://localhost:3000
 
-- GITHUB_CLIENT_ID=
-- GITHUB_CLIENT_SECRET=
+# ─── PostgreSQL ──────────────────────────────────────────
+DB_NAME=quill
+DB_USER=postgres
+DB_PASSWORD=your-db-password
+DB_HOST=localhost
+DB_PORT=5432
 
-- BREVO_SMTP_HOST=smtp-relay.brevo.com
-- BREVO_SMTP_PORT=587
-- BREVO_SMTP_USE_TLS=True
-- BREVO_SMTP_LOGIN=
-- BREVO_SMTP_KEY=
-- DEFAULT_FROM_EMAIL=Quill <your-email@example.com>
+# ─── Google OAuth ────────────────────────────────────────
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 
-- GROK_API_KEY=
-- DEEPL_API_KEY=
-- MICROSOFT_TRANSLATOR_KEY=
-- MICROSOFT_TRANSLATOR_REGION=eastus
+# ─── GitHub OAuth ────────────────────────────────────────
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# ─── Brevo SMTP ──────────────────────────────────────────
+BREVO_SMTP_HOST=smtp-relay.brevo.com
+BREVO_SMTP_PORT=587
+BREVO_SMTP_USE_TLS=True
+BREVO_SMTP_LOGIN=
+BREVO_SMTP_KEY=
+
+DEFAULT_FROM_EMAIL=Quill <your-email@example.com>
+
+# ─── AI / Translation Services ──────────────────────────
+GROK_API_KEY=
+DEEPL_API_KEY=
+
+MICROSOFT_TRANSLATOR_KEY=
+MICROSOFT_TRANSLATOR_REGION=eastus
+```
+
+### 🔐 Production Environment
+
+Production credentials should be configured through the hosting platform's **Environment Variables** section instead of being committed to GitHub.
 
 ---
 
 # 🗄️ Database
 
-Quill uses PostgreSQL for persistent application data.
-Make sure PostgreSQL is running before starting Django.
+Quill uses **PostgreSQL** for persistent application data.
 
-Then:
+Make sure PostgreSQL is running before starting the Django backend.
 
-• python manage.py makemigrations
-• python manage.py migrate
+## Create Migrations
 
-**Create an admin account:**
-• python manage.py createsuperuser
+```bash
+python manage.py makemigrations
+```
+
+## Apply Migrations
+
+```bash
+python manage.py migrate
+```
+
+## Create Admin Account
+
+```bash
+python manage.py createsuperuser
+```
 
 ---
 
 # 🎙️ FFmpeg Setup
 
-Voice translation requires FFmpeg and FFprobe.
-After installing FFmpeg, verify:
+Voice translation and audio processing require:
 
-• ffmpeg -version
-• ffprobe -version
+- 🎬 **FFmpeg**
+- 🔎 **FFprobe**
 
-The backend also supports explicit FFmpeg path configuration and can automatically detect common Windows installation layouts.
+## Verify Installation
+
+Run:
+
+```bash
+ffmpeg -version
+```
+
+and:
+
+```bash
+ffprobe -version
+```
+
+The backend also supports **explicit FFmpeg path configuration** and automatic detection of common Windows installation layouts.
+
+### Audio Processing Pipeline
+
+```text
+🎤 Browser Audio
+      ↓
+📤 Uploaded Audio
+      ↓
+⚙️ FFmpeg
+      ↓
+🔎 FFprobe
+      ↓
+🎵 Normalized WAV
+      ↓
+🧠 Speech Recognition
+      ↓
+🌍 Translation
+      ↓
+🔊 TTS
+```
 
 ---
 
 # 🌐 Deployment
 
-## Frontend
+Quill uses a **separated frontend and backend deployment architecture**.
 
-The React frontend is Vercel-ready.
+## 🎨 Frontend — Vercel
 
-### Typical settings:
+The React frontend is deployed on **Vercel**.
 
-• Framework: Create React App
-• Root Directory: frontend
-• Build Command: npm run build
-• Output Directory: build
-• Install Command: npm install
-
-### Production environment variable:
-
-**REACT_APP_API_URL=https://your-backend-domain.com/api**
-Do not use http://127.0.0.1:8000/api in production.
-
-## Backend
-
-The Django backend should be deployed on a Django-compatible server/platform with:
-
-• PostgreSQL
-• Environment variables
-• Persistent media/storage strategy
-• FFmpeg where required
-• HTTPS
-• CORS configuration
-• Static file handling
-• Production WSGI/ASGI configuration
-
----
-
-# 🌍 Custom Domain
-
-Quill is deployed using **Vercel for the frontend** and **Render for the backend API**.
-
-## 🚀 Current Deployment URLs
-
-### Frontend
+### Current Frontend
 
 **https://quill-one-sandy.vercel.app/**
 
-### Backend API
+### Typical Vercel Configuration
+
+| Setting | Value |
+|---|---|
+| **Framework** | Create React App |
+| **Root Directory** | `frontend` |
+| **Build Command** | `npm run build` |
+| **Output Directory** | `build` |
+| **Install Command** | `npm install` |
+
+### Production Environment Variable
+
+```env
+REACT_APP_API_URL=https://quill-a52m.onrender.com/api
+```
+
+> 🚫 **Do not use `http://127.0.0.1:8000/api` in production.**
+
+---
+
+## ⚙️ Backend — Render
+
+The Django backend is deployed on **Render**.
+
+### Current Backend
 
 **https://quill-a52m.onrender.com/**
 
-### Backend API Base URL
+### API Base URL
 
 **https://quill-a52m.onrender.com/api**
+
+The production backend requires:
+
+- 🐘 **PostgreSQL**
+- 🔐 **Environment variables**
+- 📁 **Persistent media/storage strategy**
+- 🎬 **FFmpeg where required**
+- 🌐 **HTTPS**
+- 🔒 **CORS configuration**
+- 📦 **Static file handling**
+- ⚙️ **Production WSGI/ASGI configuration**
+
+---
+
+# 📊 Current Production Architecture
+
+```text
+                         👤 User
+                            │
+                            ▼
+              ┌────────────────────────────┐
+              │          Vercel            │
+              │      React Frontend        │
+              │                            │
+              │ quill-one-sandy.vercel.app │
+              └────────────┬───────────────┘
+                           │
+                           │ REST / JSON
+                           ▼
+              ┌────────────────────────────┐
+              │          Render            │
+              │      Django Backend        │
+              │                            │
+              │   quill-a52m.onrender.com  │
+              └────────────┬───────────────┘
+                           │
+                           ▼
+              ┌────────────────────────────┐
+              │        PostgreSQL          │
+              │        Data Layer          │
+              └────────────────────────────┘
+```
+
+---
+
+# 📍 Production URLs
+
+| Service | URL |
+|---|---|
+| 🌐 **Live Frontend** | https://quill-one-sandy.vercel.app/ |
+| ⚙️ **Backend** | https://quill-a52m.onrender.com/ |
+| 🔗 **API Base URL** | https://quill-a52m.onrender.com/api |
+| 💻 **GitHub Repository** | https://github.com/Aarush005coder/Quill |
 
 ---
 
 # 📊 Project Highlights
 
-**Text Translation** ✅
-**Speech to Text** ✅
-**Speech to Speech** ✅
-**Text to Speech** ✅
-**Auto Language Detection** ✅
-**Translation History** ✅
-**Favorites** ✅
-**Document Translation** ✅
-**PDF Tools** ✅
-**Image Tools** ✅
-**Word / Excel Conversion** ✅
-**Smart Tools** ✅
-**Notifications** ✅
-**Email** ✅
-**Push Notifications** ✅
-**Google OAuth** ✅
-**GitHub OAuth** ✅
-**JWT Auth** ✅
-**PostgreSQL** ✅
-**React Frontend** ✅
-**Django REST API** ✅
-**Vercel Frontend Deployment** ✅
+| Feature | Status |
+|---|:---:|
+| 🌍 **Text Translation** | ✅ |
+| 🎙️ **Speech to Text** | ✅ |
+| 🗣️ **Speech to Speech** | ✅ |
+| 🔊 **Text to Speech** | ✅ |
+| 🔎 **Auto Language Detection** | ✅ |
+| 🌐 **25 Languages** | ✅ |
+| 🕘 **Translation History** | ✅ |
+| ⭐ **Favorites** | ✅ |
+| 📄 **Document Translation** | ✅ |
+| 📑 **Multi-page Documents** | ✅ |
+| 📚 **PDF Merge** | ✅ |
+| ✂️ **PDF Split** | ✅ |
+| ⚡ **PDF Compress** | ✅ |
+| 🔄 **Rotate PDF** | ✅ |
+| 🗂️ **Organize PDF** | ✅ |
+| 💧 **Watermark PDF** | ✅ |
+| 🎨 **PDF Color Enhance** | ✅ |
+| 🔢 **N-up PDF** | ✅ |
+| 🖼️ **Image Merge** | ✅ |
+| 📄 **Image to PDF** | ✅ |
+| 🔄 **Image Converter** | ✅ |
+| 📘 **Word Merge** | ✅ |
+| 🔄 **PDF to Word** | ✅ |
+| 📄 **Word to PDF** | ✅ |
+| 📊 **PDF to Excel** | ✅ |
+| 📈 **Excel to PDF** | ✅ |
+| 🔢 **Number Tools** | ✅ |
+| 💱 **Currency Tools** | ✅ |
+| 📏 **Unit Tools** | ✅ |
+| 🗃️ **Data Tools** | ✅ |
+| ⚡ **Electrical Tools** | ✅ |
+| ❤️ **Health Tools** | ✅ |
+| 🧮 **Specific Tools** | ✅ |
+| 🔔 **In-App Notifications** | ✅ |
+| 📧 **Email Notifications** | ✅ |
+| 📲 **Push Notifications** | ✅ |
+| 🔵 **Google OAuth** | ✅ |
+| 🐙 **GitHub OAuth** | ✅ |
+| 🔐 **JWT Authentication** | ✅ |
+| 🐘 **PostgreSQL** | ✅ |
+| ⚛️ **React Frontend** | ✅ |
+| 🌿 **Django REST API** | ✅ |
+| ▲ **Vercel Deployment** | ✅ |
+| 🚀 **Render Deployment** | ✅ |
 
 ---
 
 # 🎨 UI Philosophy
 
-Quill follows a modern workspace-oriented design:
+Quill follows a **modern workspace-oriented design system** focused on clarity, consistency, usability, and responsiveness.
 
-• Clean light interface
-• Soft borders and shadows
-• Rounded cards
-• Blue / cyan / purple accent system
-• Responsive layouts
-• Clear hierarchy
-• Dedicated workspaces
-• Fast, focused interactions
-• Consistent iconography
-• Accessible controls
-• Dark/light appearance support
+## Design Principles
 
-The goal is to make the application feel like a professional SaaS productivity platform, not a collection of disconnected tools.
+- ✨ **Clean and minimal interface**
+- 🌙 **Dark / light appearance support**
+- 🧱 **Soft borders**
+- 🌫️ **Subtle shadows**
+- 🔵 **Rounded cards and controls**
+- 🎨 **Blue / cyan / purple accent system**
+- 📱 **Responsive layouts**
+- 👁️ **Clear visual hierarchy**
+- 🧩 **Dedicated workspaces**
+- ⚡ **Fast and focused interactions**
+- 🎯 **Consistent iconography**
+- ♿ **Accessible controls**
+- 🧹 **Minimal visual clutter**
+
+The goal is to make Quill feel like a **professional SaaS productivity platform**, rather than a collection of disconnected utilities.
 
 ---
 
 # 🧭 Main Workspaces
 
-                                              ┌─────────────── Quill ───────────────┐
-                                              │                                     │
-                                              │  Overview                           │
-                                              │  Translate                          │
-                                              │  Tools                              │
-                                              │  Documents                          │
-                                              │  Combine                            │
-                                              │  History                            │
-                                              │  About                              │
-                                              │  Settings                           │
-                                              │                                     │
-                                              └─────────────────────────────────────┘
+```text
+┌────────────────────── QUILL ──────────────────────┐
+│                                                   │
+│  🏠 Overview                                      │
+│  🌍 Translate                                     │
+│  🛠️ Tools                                         │
+│  📄 Documents                                     │
+│  🧩 Combine                                       │
+│  🕘 History                                       │
+│  ℹ️ About                                         │
+│  ⚙️ Settings                                      │
+│                                                   │
+└───────────────────────────────────────────────────┘
+```
 
 ---
 
-# 🖼️ Product Screens
+# 🔄 Typical User Workflows
 
-**Translation** : Modern translation workspace with language switching, text input, voice input, speech playback, recent activity, and export controls.
-**Documents** : Upload, preview, translate, process, and download multi-page documents.
-**Combine** : Merge, convert, compress, rotate, organize, watermark, and transform files from one workspace.
-**Tools** : Use categorized calculation and conversion utilities for everyday work.
-**History** : Review a complete activity timeline across translations, tools, documents, and combine operations.
-**Settings** : Manage language preferences, appearance, translation behavior, notifications, privacy, storage, account settings, and advanced options.
+## 🌍 Text Translation
+
+```text
+🌍 Choose Source Language
+        ↓
+🎯 Choose Target Language
+        ↓
+📝 Enter Text
+        ↓
+⚡ Translate
+        ↓
+👁️ Review Result
+        ↓
+📋 Copy / 🔊 Listen / ⭐ Save
+```
+
+## 🎙️ Voice Translation
+
+```text
+🎤 Record Voice
+      ↓
+📤 Upload Audio
+      ↓
+⚙️ Convert Audio
+      ↓
+🧠 Speech Recognition
+      ↓
+🌍 Translate
+      ↓
+🔊 Generate Speech
+      ↓
+▶️ Play Audio
+```
+
+## 📄 Document Translation
+
+```text
+📤 Upload Document
+      ↓
+🔎 Detect / Select Language
+      ↓
+🎯 Choose Target Language
+      ↓
+📑 Process Pages
+      ↓
+🌍 Translate
+      ↓
+👁️ Review
+      ↓
+📥 Download
+```
+
+## 🧩 File Conversion
+
+```text
+🛠️ Choose Tool
+      ↓
+📤 Upload Files
+      ↓
+⚙️ Configure
+      ↓
+🚀 Process
+      ↓
+👁️ Preview
+      ↓
+📥 Download
+```
+
+---
+
+# 🧠 Translation Engine Strategy
+
+Quill supports multiple translation services with fallback strategies to improve reliability.
+
+```text
+🌍 Requested Translation Engine
+            ↓
+      Primary Service
+            ↓
+        If Failed
+            ↓
+       🔤 MyMemory
+            ↓
+        If Failed
+            ↓
+        🌐 Lingva
+            ↓
+        If Failed
+            ↓
+     🔄 LibreTranslate
+            ↓
+        If Failed
+            ↓
+      🌍 Google
+```
+
+This architecture helps prevent a failure from a single translation provider from breaking the complete translation workflow.
+
+---
+
+# 🧠 Speech Processing Strategy
+
+Quill normalizes browser-recorded audio before speech recognition.
+
+```text
+🎤 Browser Audio
+      ↓
+⚙️ FFmpeg Decode
+      ↓
+🎚️ Mono Audio
+      ↓
+⏱️ 16 kHz Sample Rate
+      ↓
+🎵 PCM WAV
+      ↓
+🔇 Silence / Signal Analysis
+      ↓
+🧠 Speech Recognition
+```
+
+Generated speech follows:
+
+```text
+🌍 Translated Text
+      ↓
+🗣️ Edge TTS
+      ↓
+If Failed
+      ↓
+🔊 gTTS Fallback
+      ↓
+🎵 MP3
+      ↓
+💾 Stored Media
+      ↓
+🔗 Audio URL
+```
+
+---
+
+# 🛡️ Reliability & Error Handling
+
+Quill includes defensive handling for:
+
+- ⚠️ **Invalid uploaded files**
+- 🌍 **Unsupported languages**
+- 🔌 **Translation provider failures**
+- 🎙️ **Speech recognition failures**
+- 🔊 **TTS failures**
+- 🎬 **FFmpeg conversion failures**
+- 🌐 **API errors**
+- 🔐 **Authentication failures**
+- 🗄️ **Database/history operations**
+- 🔔 **Notification failures**
+
+The goal is to keep the application resilient even when an optional external service becomes unavailable.
+
+---
+
+Availability depends on the specific operation and processing workflow.
 
 ---
 
@@ -895,12 +1304,31 @@ The goal is to make the application feel like a professional SaaS productivity p
 
 Contributions are welcome.
 
-- git checkout -b feature/your-feature
-- git add .
-- git commit -m "Add your feature"
-- git push origin feature/your-feature
+## 1. Create a Feature Branch
 
-Then open a Pull Request.
+```bash
+git checkout -b feature/your-feature
+```
+
+## 2. Add Your Changes
+
+```bash
+git add .
+```
+
+## 3. Commit Your Changes
+
+```bash
+git commit -m "Add your feature"
+```
+
+## 4. Push the Branch
+
+```bash
+git push origin feature/your-feature
+```
+
+Then open a **Pull Request** on GitHub.
 
 ---
 
@@ -908,15 +1336,20 @@ Then open a Pull Request.
 
 Add the license that matches your intended distribution model before publishing the project publicly.
 
+A `LICENSE` file can be placed in the repository root before publishing the project.
+
 ---
 
 # 👨‍💻 Author
 
 <div align="center">
 
+<img src="assets/quill_logo.png" alt="Quill Logo" width="75"/>
+
 ## Aarush Khandelwal
 
-**AI & Data Science**
+### AI & Data Science Developer
+
 **MBM University, Jodhpur**
 
 <p>
@@ -925,9 +1358,13 @@ Add the license that matches your intended distribution model before publishing 
   </a>
 </p>
 
+</div>
+
+---
+
 <div align="center">
 
-<img src="assets/quill_logo.png" alt="Quill Logo" width="70"/>
+<img src="assets/quill_logo.png" alt="Quill Logo" width="65"/>
 
 # ✨ Quill
 
@@ -937,18 +1374,17 @@ Built with **React, TypeScript, Tailwind CSS, Django, Python, and PostgreSQL.**
 
 <p>
   <a href="https://quill-one-sandy.vercel.app/">
-    🚀 <b>Live Demo</b>
+    <img src="https://img.shields.io/badge/🚀_Live_Demo-Open_Quill-2563EB?style=for-the-badge" alt="Live Demo"/>
   </a>
-  &nbsp; • &nbsp;
+
   <a href="https://github.com/Aarush005coder/Quill">
-    💻 <b>GitHub Repository</b>
+    <img src="https://img.shields.io/badge/💻_GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Repository"/>
   </a>
 </p>
 
-⭐ <b>Star the repository if you like the project.</b>
+⭐ **Star the repository if you like the project.**
 
 <br/>
-
-Made with ❤️ by <b>Aarush Khandelwal</b>
+Made with ❤️ by **Aarush Khandelwal**
 
 </div>
