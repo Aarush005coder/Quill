@@ -642,4 +642,4 @@ def delete_template(request, pk):
         template.delete()
         return Response({"success": True, "message": "Template deleted."})
     except DocumentTemplate.DoesNotExist:
-        return Response({"success": False, "message": "Template not found."}, status=status.HTTP_404_NOT_FOUND)git add backend/documents/views.py backend/requirements.txt
+        return Response({"success": False, "message": "Template not found."}, status=status.HTTP_404_NOT_FOUND)
