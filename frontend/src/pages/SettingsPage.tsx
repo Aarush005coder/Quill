@@ -798,7 +798,7 @@ const TwoFactorSetupModal = ({
 
         let response =
           await fetch(
-            `${API_BASE}/api/auth/2fa/setup/`,
+            `${API_BASE}/auth/2fa/setup/`,
             {
               headers: {
                 Authorization:
