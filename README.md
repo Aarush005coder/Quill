@@ -155,6 +155,7 @@ Quill includes a complete **browser-to-backend speech pipeline**.
 🔊 Edge TTS / gTTS
       ↓
 ✅ Translated Audio
+```
 
 ### Voice features
 
