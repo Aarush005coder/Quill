@@ -924,7 +924,7 @@ const TwoFactorSetupModal = ({
         const token = getToken();
         const response =
           await fetch(
-            `${API_BASE}/api/auth/2fa/email-fallback/`,
+            `${API_BASE}/auth/2fa/email-fallback/`,
             {
               method: "POST",
               headers: {
