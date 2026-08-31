@@ -15,7 +15,8 @@ from rest_framework.views import APIView
 # ============================================================
 
 from docx import Document as DocxDocument
-from PyPDF2 import PdfReader
+# ✅ FIX: PyPDF2 ki jagah modern 'pypdf' use karein (better Unicode support)
+from pypdf import PdfReader
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -39,17 +40,36 @@ from .serializers import (
     DocumentTemplateSerializer,
 )
 
-# IMPORTANT:
-# GrokTranslationService has been removed.
-# Translation now uses deep-translator through TranslationService.
 from translation.views import TranslationService
-
-# ✅ IMPORT ADDED FOR REAL-TIME UNIFIED HISTORY
 from history.utils import save_to_history
 
 
 # ═════════════════════════════════════════════════════════════
-# TEXT EXTRACTION
+# HELPER: TEXT CLEANING
+# ═════════════════════════════════════════════════════════════
+
+def clean_extracted_text(text):
+    """
+    Garbage characters, control codes, aur extra spaces ko remove karta hai
+    taaki translation aur PDF generation sahi se ho sake.
+    """
+    if not text:
+        return ""
+    
+    # 1. Remove weird control characters (jo ■ ya + ban jate hain)
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', text)
+    
+    # 2. Multiple newlines ko max 2 newlines tak limit karein
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    # 3. Multiple spaces ko single space mein badlein (except newlines)
+    text = re.sub(r' +', ' ', text)
+    
+    return text.strip()
+
+
+# ═════════════════════════════════════════════════════════════
+# TEXT EXTRACTION & OUTPUT CREATION
 # ═════════════════════════════════════════════════════════════
 
 class DocumentProcessor:
@@ -62,14 +82,15 @@ class DocumentProcessor:
     def extract_text(file_path, file_type):
         if file_type in ["txt", "md", "rtf"]:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
-                return file.read()
+                return clean_extracted_text(file.read())
 
         elif file_type == "docx":
             document = DocxDocument(file_path)
             paragraphs = [paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()]
-            return "\n\n".join(paragraphs)
+            return clean_extracted_text("\n\n".join(paragraphs))
 
         elif file_type == "pdf":
+            # ✅ FIX: pypdf use kar rahe hain jo Unicode ko behtar handle karta hai
             reader = PdfReader(file_path)
             text_parts = []
             for page in reader.pages:
@@ -77,8 +98,10 @@ class DocumentProcessor:
                     page_text = page.extract_text() or ""
                 except Exception:
                     page_text = ""
+                
                 if page_text.strip():
-                    text_parts.append(page_text)
+                    text_parts.append(clean_extracted_text(page_text))
+            
             return "\n\n".join(text_parts)
 
         elif file_type == "html":
@@ -96,12 +119,15 @@ class DocumentProcessor:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
                 parser = MLStripper()
                 parser.feed(file.read())
-                return parser.get_data()
+                return clean_extracted_text(parser.get_data())
 
         raise ValueError(f"Unsupported file type: {file_type}")
 
     @staticmethod
     def create_output(text, output_format, output_path, original_name):
+        # Ensure text is clean before writing
+        text = clean_extracted_text(text)
+
         if output_format == "txt":
             with open(output_path, "w", encoding="utf-8") as file:
                 file.write(text)
@@ -179,7 +205,6 @@ class DocumentUploadView(APIView):
 
         user = request.user
 
-        # ✅ SAFE FALLBACK: Agar User model mein yeh fields nahi hain, toh default values use karein
         current_pages = getattr(user, "monthly_document_pages", 0) or 0
         document_limit = getattr(user, "monthly_document_limit", 0) or 0
         is_premium = getattr(user, "is_premium", False)
@@ -236,7 +261,9 @@ class DocumentUploadView(APIView):
         original_path = doc.original_file.path
 
         extracted = DocumentProcessor.extract_text(original_path, doc.file_type) or ""
-        extracted = extracted.strip()
+        
+        # ✅ FIX: Final cleaning before saving to DB
+        extracted = clean_extracted_text(extracted)
 
         if not extracted:
             raise ValueError("No readable text was found in the document.")
@@ -248,7 +275,6 @@ class DocumentUploadView(APIView):
         doc.page_count = estimated_pages
         doc.save(update_fields=["page_count"])
 
-        # ✅ SAFE FALLBACK: User usage update sirf tab karein jab field exist kare
         user = doc.user
         if hasattr(user, "monthly_document_pages"):
             current_val = getattr(user, "monthly_document_pages", 0) or 0
@@ -274,7 +300,6 @@ class DocumentUploadView(APIView):
         relative_path = os.path.relpath(output_path, settings.MEDIA_ROOT).replace("\\", "/")
         doc.mark_completed(relative_path, output_filename)
 
-        # ✅ ADD UNIFIED HISTORY FOR DOCUMENT TRANSLATION
         try:
             save_to_history(
                 user=doc.user,
