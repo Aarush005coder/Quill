@@ -224,244 +224,381 @@ The interface is designed to preserve the layout, borders, and alignment of proc
 
 ## 🧩 Combine & Convert
 
-The Combine workspace contains document, image, and file transformation tools in one place.
+The **Combine & Convert workspace** contains document, image, and file transformation tools in one place.
 
-### PDF Tools
+### 📑 PDF Tools
 
-• **PDF Merge**
-• **PDF Split**
-• **PDF Compress**
-• **Rotate PDF**
-• **Organize PDF**
-• **Watermark PDF**
-• **PDF Color Enhance**
-• **N-up PDF**
+- 📚 **PDF Merge**
+- ✂️ **PDF Split**
+- ⚡ **PDF Compress**
+- 🔄 **Rotate PDF**
+- 🗂️ **Organize PDF**
+- 💧 **Watermark PDF**
+- 🎨 **PDF Color Enhance**
+- 🔢 **N-up PDF**
 
-### Image Tools
+### 🖼️ Image Tools
 
-• **Image Merge**
-• **Image to PDF**
-• **Image Converter**
-• **N-up PDF / image-sheet workflows**
+- 🖼️ **Image Merge**
+- 📄 **Image to PDF**
+- 🔄 **Image Converter**
+- 🧩 **N-up PDF / image-sheet workflows**
 
-Supported image conversion workflows include common formats such as:
-**JPG · JPEG · PNG · WEBP · GIF · BMP · TIFF · ICO · SVG**
+### 📦 Supported Image Formats
 
-### Document Tools
+```text
+JPG
+JPEG
+PNG
+WEBP
+GIF
+BMP
+TIFF
+ICO
+SVG
+```
 
-• **Word Merge**
-• **PDF to Word**
-• **Word to PDF**
-• **PDF to Excel**
-• **Excel to PDF**
+### 📘 Document Tools
+
+- 📄 **Word Merge**
+- 🔄 **PDF to Word**
+- 📘 **Word to PDF**
+- 📊 **PDF to Excel**
+- 📈 **Excel to PDF**
 
 ---
 
 ## 🕘 History & Activity Timeline
 
-Quill keeps account-level activity in a dedicated history workspace.
+Quill keeps **account-level activity** in a dedicated history workspace.
 
-• History features
-• Activity timeline
-• Translation history
-• Tool activity
-• Document activity
-• Combine activity
-• Category filtering
-• Search history
-• Export history as PDF
-• Delete individual activity
-• Delete all history
-• Synced history for authenticated users
+### 📌 History Features
 
-### Example activity types include:
+- 🕘 **Activity timeline**
+- 🌍 **Translation history**
+- 🛠️ **Tool activity**
+- 📄 **Document activity**
+- 🧩 **Combine activity**
+- 🏷️ **Category filtering**
+- 🔎 **Search history**
+- 📄 **Export history as PDF**
+- 🗑️ **Delete individual activity**
+- 🧹 **Delete all history**
+- 🔐 **Synced history for authenticated users**
 
-• Speech to Speech
-• Number Converter
-• Rotate PDF
-• Text Translation
-• Document Translation
-• Combine / Convert
+### 📋 Example Activity Types
+
+- 🎙️ **Speech to Speech**
+- 🔢 **Number Converter**
+- 🔄 **Rotate PDF**
+- 🌍 **Text Translation**
+- 📄 **Document Translation**
+- 🧩 **Combine / Convert**
 
 ---
 
 ## ⚙️ Settings
 
-Quill includes a detailed settings center.
+Quill includes a detailed **Settings Center** for controlling and personalizing the application.
 
-### General
+### ⚙️ General
 
-• Default source language
-• Default target language
-• Auto swap languages
-• Auto translate
-• Preserve formatting
-• Save translation history
-• Translation style
-• Formality level
-• Translation speed
+- 🌍 **Default source language**
+- 🎯 **Default target language**
+- 🔄 **Auto swap languages**
+- ⚡ **Auto translate**
+- 📝 **Preserve formatting**
+- 🕘 **Save translation history**
+- 🎨 **Translation style**
+- 🗣️ **Formality level**
+- 🚀 **Translation speed**
 
-### Appearance
+### 🎨 Appearance
 
-• Light / dark appearance preferences
-• UI personalization
+- ☀️ **Light appearance**
+- 🌙 **Dark appearance**
+- ✨ **UI personalization**
+- 🎨 **Theme preferences**
 
-### Translation
+### 🌍 Translation
 
-• Default language preferences
-• Translation behavior
-• Engine configuration
-• Speech options
+- 🌐 **Default language preferences**
+- ⚙️ **Translation behavior**
+- 🔌 **Engine configuration**
+- 🎙️ **Speech options**
 
-### Notifications
+### 🔔 Notifications
 
-• In-app notifications
-• Email notification preferences
-• Translation completion notifications
-• Push notification preferences
+- 🔵 **In-app notifications**
+- 📧 **Email notification preferences**
+- ✅ **Translation completion notifications**
+- 📲 **Push notification preferences**
 
-### Privacy & Security
+### 🔐 Privacy & Security
 
-• Account-aware security controls
-• Data handling preferences
-• Privacy-oriented configuration
+- 🛡️ **Account-aware security controls**
+- 📦 **Data handling preferences**
+- 🔒 **Privacy-oriented configuration**
 
-### Data & Storage
+### 💾 Data & Storage
 
-• Cache settings
-• History storage
-• Export preferences
-• Local application data controls
+- ⚡ **Cache settings**
+- 🕘 **History storage**
+- 📤 **Export preferences**
+- 💾 **Local application data controls**
 
-### Account
+### 👤 Account
 
-• Profile information
-• Plan information
-• Billing / activity related settings
+- 👤 **Profile information**
+- 💳 **Plan information**
+- 📊 **Billing / activity-related settings**
 
-### Advanced
+### 🧑‍💻 Advanced
 
-• Developer-oriented configuration
-• Advanced application behavior
-• Runtime and integration settings
+- 🧑‍💻 **Developer-oriented configuration**
+- ⚙️ **Advanced application behavior**
+- 🔧 **Runtime and integration settings**
 
 ---
 
 # 🔐 Authentication & Accounts
 
-Quill is designed as an account-based application.
+Quill is designed as a **secure, account-based application**.
 
-• Authentication stack
-• JWT authentication
-• Access and refresh tokens
-• Django authentication
-• Email-based account flows
-• Google OAuth
-• GitHub OAuth
-• OTP/email verification workflows
-• Account-specific history
-• Account-specific favorites
-• Protected API endpoints
+### 🔑 Authentication Stack
 
-## ⭐ Favorites
-
-Users can save important translations for quick access later.
-
-### Favorites support:
-
-• Save translation
-• Remove favorite
-• Favorite history item
-• Favorite folders
-• User-specific favorite records
-
-## 🔔 Notifications
-
-Quill supports multiple notification channels.
-
-### In-app:
-
-• Translation completion
-• Speech translation completion
-• Document translation completion
-
-### History-related events:
-
-• **Email** - The backend supports SMTP-based email delivery for account and translation workflows.
-• **Push** - The application can support browser push notifications through VAPID-based subscriptions.
-
-# 🏗️ Architecture
-
-Quill follows a frontend + API backend architecture.
-
-                        ┌──────────────────────┐
-                        │       Quill UI       │
-                        │ React + TypeScript   │
-                        └──────────┬───────────┘
-                                   │
-                              REST / JSON
-                                   │
-                        ┌──────────▼───────────┐
-                        │    Django Backend    │
-                        │   Django REST API    │
-                        └───────┬──────┬───────┘
-                                │      │
-                         ┌──────▼─┐  ┌─▼────────┐
-                         │Database│  │ External │
-                         │Postgres│  │ Services  │
-                         └────────┘  └───────────┘
+- 🔐 **JWT authentication**
+- 🎫 **Access and refresh tokens**
+- 👤 **Django authentication**
+- 📧 **Email-based account flows**
+- 🔵 **Google OAuth**
+- 🐙 **GitHub OAuth**
+- 🔢 **OTP / email verification workflows**
+- 🕘 **Account-specific history**
+- ⭐ **Account-specific favorites**
+- 🛡️ **Protected API endpoints**
 
 ---
 
+## ⭐ Favorites
+
+Users can save important translations for **quick access later**.
+
+### 📌 Favorites Support
+
+- ⭐ **Save translation**
+- ❌ **Remove favorite**
+- 🕘 **Favorite history item**
+- 📁 **Favorite folders**
+- 👤 **User-specific favorite records**
+- 💾 **Persistent favorite data**
+
+---
+
+## 🔔 Notifications
+
+Quill supports multiple notification channels for keeping users informed about important application activity.
+
+### 🔵 In-App Notifications
+
+- ✅ **Translation completion**
+- 🎙️ **Speech translation completion**
+- 📄 **Document translation completion**
+- 🕘 **History-related events**
+
+### 📧 Email Notifications
+
+The backend supports **SMTP-based email delivery** for:
+
+- 🔐 **Account workflows**
+- 🔢 **OTP verification**
+- ✅ **Translation completion**
+- 📩 **Application notifications**
+
+### 📲 Push Notifications
+
+The application can support **browser push notifications** through **VAPID-based subscriptions**.
+
+---
+
+# 🏗️ Architecture
+
+Quill follows a **frontend + API backend architecture**.
+
+```text
+                         ┌─────────────────────────┐
+                         │       QUILL FRONTEND    │
+                         │                         │
+                         │   React + TypeScript    │
+                         │      Tailwind CSS       │
+                         └────────────┬────────────┘
+                                      │
+                                      │ REST / JSON
+                                      ▼
+                         ┌─────────────────────────┐
+                         │      DJANGO BACKEND     │
+                         │                         │
+                         │   Django REST Framework │
+                         │    JWT Authentication   │
+                         └────────────┬────────────┘
+                                      │
+                         ┌────────────┴────────────┐
+                         │                         │
+                         ▼                         ▼
+                ┌──────────────────┐      ┌──────────────────┐
+                │    PostgreSQL    │      │ External Services│
+                │     Database     │      │                  │
+                │                  │      │ Translation      │
+                └──────────────────┘      │ Speech / Email   │
+                                          │ OAuth / APIs     │
+                                          └──────────────────┘
+```
+
 # 💻 Technology Stack
 
-## Frontend
+Quill is built using a modern **full-stack technology ecosystem** combining a responsive React frontend, Django REST backend, database services, speech processing, document processing, and multiple external integrations.
 
-- React
-- TypeScript
-- Tailwind CSS
-- React Router
-- Axios
-- React Hot Toast
-- Zustand
-- React Query
-- Lucide / Heroicons
-- jsPDF
-- Mammoth
-- PDF.js
-- DOCX utilities
-- Firebase integrations where required
+---
 
-## Backend
+## 🎨 Frontend
 
-- Django
-- Django REST Framework
-- Simple JWT
-- Django Allauth
-- Python
-- PostgreSQL
-- Celery
-- Django Celery Results
-- FFmpeg
-- FFprobe
-- PyDub
-- SpeechRecognition
-- gTTS
-- Edge TTS
-- Deep Translator
+<div align="left">
 
-## Integrations
+<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
+<img src="https://img.shields.io/badge/TypeScript-4.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/>
+<img src="https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS"/>
+<img src="https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white" alt="React Router"/>
+<img src="https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white" alt="Axios"/>
+<img src="https://img.shields.io/badge/React_Query-FF4154?style=for-the-badge&logo=reactquery&logoColor=white" alt="React Query"/>
+<img src="https://img.shields.io/badge/Zustand-433E38?style=for-the-badge&logo=zustand&logoColor=white" alt="Zustand"/>
+<img src="https://img.shields.io/badge/Lucide-Icons-F56565?style=for-the-badge" alt="Lucide"/>
+<img src="https://img.shields.io/badge/Heroicons-Icons-7C3AED?style=for-the-badge" alt="Heroicons"/>
+<img src="https://img.shields.io/badge/jsPDF-Document_Export-B30B00?style=for-the-badge" alt="jsPDF"/>
+<img src="https://img.shields.io/badge/Mammoth-DOCX_Processing-8B5CF6?style=for-the-badge" alt="Mammoth"/>
+<img src="https://img.shields.io/badge/PDF.js-PDF_Processing-F40F02?style=for-the-badge" alt="PDF.js"/>
+<img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase"/>
 
-- Google OAuth
-- GitHub OAuth
-- Brevo SMTP
-- Google Translation services
-- MyMemory
-- Lingva
-- LibreTranslate
-- Microsoft Translator
-- DeepL
-- Optional Grok / xAI integration
+</div>
+
+### Frontend Technologies
+
+- ⚛️ **React 19** — Component-based UI development
+- 🔷 **TypeScript** — Strongly typed frontend development
+- 🎨 **Tailwind CSS** — Utility-first responsive styling
+- 🧭 **React Router** — Application routing and navigation
+- 🌐 **Axios** — API communication
+- ⚡ **React Query** — Server-state and API data management
+- 🗃️ **Zustand** — Lightweight client-side state management
+- 🎯 **Lucide React** — Modern application icons
+- 🧩 **Heroicons** — Additional interface icons
+- 📄 **jsPDF** — PDF generation and export
+- 📘 **Mammoth** — DOCX document processing
+- 📑 **PDF.js** — PDF rendering and processing
+- 🔥 **Firebase** — Authentication/integration workflows where required
+
+---
+
+## ⚙️ Backend
+
+<div align="left">
+
+<img src="https://img.shields.io/badge/Python-3.x-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
+<img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django"/>
+<img src="https://img.shields.io/badge/Django_REST_Framework-A30000?style=for-the-badge&logo=django&logoColor=white" alt="Django REST Framework"/>
+<img src="https://img.shields.io/badge/Simple_JWT-Authentication-000000?style=for-the-badge" alt="Simple JWT"/>
+<img src="https://img.shields.io/badge/Django_Allauth-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django Allauth"/>
+<img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+<img src="https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white" alt="Celery"/>
+<img src="https://img.shields.io/badge/FFmpeg-007808?style=for-the-badge&logo=ffmpeg&logoColor=white" alt="FFmpeg"/>
+<img src="https://img.shields.io/badge/FFprobe-007808?style=for-the-badge&logo=ffmpeg&logoColor=white" alt="FFprobe"/>
+<img src="https://img.shields.io/badge/PyDub-Audio_Processing-6366F1?style=for-the-badge" alt="PyDub"/>
+<img src="https://img.shields.io/badge/SpeechRecognition-Voice_AI-14B8A6?style=for-the-badge" alt="SpeechRecognition"/>
+<img src="https://img.shields.io/badge/gTTS-Text_to_Speech-FF6F00?style=for-the-badge" alt="gTTS"/>
+<img src="https://img.shields.io/badge/Edge_TTS-Speech-0078D4?style=for-the-badge" alt="Edge TTS"/>
+<img src="https://img.shields.io/badge/Deep_Translator-Translation-22C55E?style=for-the-badge" alt="Deep Translator"/>
+
+</div>
+
+### Backend Technologies
+
+- 🐍 **Python** — Core backend language
+- 🌿 **Django** — Web application framework
+- 🔗 **Django REST Framework** — RESTful API development
+- 🔐 **Simple JWT** — Token-based authentication
+- 👤 **Django Allauth** — Authentication and OAuth workflows
+- 🐘 **PostgreSQL** — Persistent relational database
+- ⚡ **Celery** — Background task processing
+- 🗄️ **Django Celery Results** — Task result management
+- 🎬 **FFmpeg** — Audio/video conversion and normalization
+- 🔎 **FFprobe** — Media inspection and metadata handling
+- 🎵 **PyDub** — Audio manipulation and processing
+- 🎙️ **SpeechRecognition** — Speech-to-text processing
+- 🔊 **gTTS** — Text-to-speech fallback
+- 🗣️ **Edge TTS** — Neural text-to-speech generation
+- 🌍 **Deep Translator** — Translation service integration
+
+---
+
+## 🔌 External Integrations
+
+<div align="left">
+
+<img src="https://img.shields.io/badge/Google_OAuth-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google OAuth"/>
+<img src="https://img.shields.io/badge/GitHub_OAuth-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub OAuth"/>
+<img src="https://img.shields.io/badge/Brevo_SMTP-0B996E?style=for-the-badge&logo=brevo&logoColor=white" alt="Brevo SMTP"/>
+<img src="https://img.shields.io/badge/Google_Translate-4285F4?style=for-the-badge&logo=googletranslate&logoColor=white" alt="Google Translate"/>
+<img src="https://img.shields.io/badge/MyMemory-Translation-2563EB?style=for-the-badge" alt="MyMemory"/>
+<img src="https://img.shields.io/badge/Lingva-Translation-7C3AED?style=for-the-badge" alt="Lingva"/>
+<img src="https://img.shields.io/badge/LibreTranslate-Translation-16A34A?style=for-the-badge" alt="LibreTranslate"/>
+<img src="https://img.shields.io/badge/Microsoft_Translator-0078D4?style=for-the-badge&logo=microsoft&logoColor=white" alt="Microsoft Translator"/>
+<img src="https://img.shields.io/badge/DeepL-0F2B46?style=for-the-badge&logo=deepl&logoColor=white" alt="DeepL"/>
+<img src="https://img.shields.io/badge/Grok_xAI-000000?style=for-the-badge" alt="Grok xAI"/>
+
+</div>
+
+### Integration Services
+
+- 🔵 **Google OAuth** — Account authentication
+- 🐙 **GitHub OAuth** — Social authentication
+- 📧 **Brevo SMTP** — Email and OTP delivery
+- 🌍 **Google Translation Services** — Translation provider
+- 🔤 **MyMemory** — Translation fallback
+- 🌐 **Lingva** — Translation fallback
+- 🔄 **LibreTranslate** — Translation fallback
+- 🟦 **Microsoft Translator** — Optional translation provider
+- 🔷 **DeepL** — Optional translation provider
+- 🤖 **Grok / xAI** — Optional AI integration
+
+---
+
+## 🧱 Technology Overview
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│                       QUILL                              │
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│  🎨 Frontend                                             │
+│  React • TypeScript • Tailwind CSS • React Query         │
+│  Zustand • Axios • PDF.js • Mammoth • jsPDF              │
+│                                                          │
+│                         ↓                                │
+│                                                          │
+│  ⚙️ Backend                                              │
+│  Python • Django • DRF • Simple JWT • Allauth            │
+│                                                          │
+│                         ↓                                │
+│                                                          │
+│  🗄️ Data & Processing                                    │
+│  PostgreSQL • Celery • FFmpeg • FFprobe • PyDub         │
+│                                                          │
+│                         ↓                                │
+│                                                          │
+│  🔌 External Services                                    │
+│  OAuth • Translation APIs • SMTP • Speech Services      │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
 
 ---
 
