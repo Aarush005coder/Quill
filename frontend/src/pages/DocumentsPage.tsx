@@ -770,7 +770,8 @@ const DocumentsPage: React.FC = () => {
     }, 2500);
   };
 
-  // ✅ UPDATED: Added Auto Token Refresh logic to prevent 401 errors
+
+  // ✅ UPDATED: Safe 401 handling without guessing refresh URLs
   const handleProcess = async () => {
     if (!doc) { toast.error("Please upload a document first."); return; }
     if (!targets.length) { toast.error("Select at least one target language."); return; }
@@ -792,46 +793,20 @@ const DocumentsPage: React.FC = () => {
       setStageMessage("Processing and translating...");
       await smoothProgress(50, 1000);
 
-      let token = localStorage.getItem("access_token");
-      const refreshToken = localStorage.getItem("refresh_token");
-      
-      let headers: Record<string, string> = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
+      const token = localStorage.getItem("access_token");
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
-      let response = await fetch(`${API_BASE}/documents/upload/`, {
+      const response = await fetch(`${API_BASE}/documents/upload/`, {
         method: "POST",
         headers,
         body: formData,
       });
 
-      // 🔥 AUTO REFRESH LOGIC: Agar 401 aaya, toh naya token le kar dobara try karega
-      if (response.status === 401 && refreshToken) {
-        try {
-          const refreshRes = await fetch(`${API_BASE}/token/refresh/`, { 
-            method: "POST", 
-            headers: { "Content-Type": "application/json" }, 
-            body: JSON.stringify({ refresh: refreshToken }) 
-          });
-          
-          if (refreshRes.ok) {
-            const refreshData = await refreshRes.json();
-            const newToken = String(refreshData.access || "");
-            if (newToken) {
-              token = newToken; 
-              localStorage.setItem("access_token", newToken);
-              headers.Authorization = `Bearer ${newToken}`;
-              
-              // Retry the upload with the new valid token
-              response = await fetch(`${API_BASE}/documents/upload/`, {
-                method: "POST",
-                headers,
-                body: formData,
-              });
-            }
-          }
-        } catch (err) {
-          console.error("Token refresh failed:", err);
-        }
+      // 🔥 FIX: Agar 401 aaya, toh seedha user ko login karne bhej do
+      if (response.status === 401) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        throw new Error("Your session has expired. Please log in again.");
       }
 
       if (!response.ok) {
@@ -865,7 +840,15 @@ const DocumentsPage: React.FC = () => {
       toast.success(`Document translated successfully!`);
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.message || "Translation failed.");
+      const errorMsg = error?.message || "Translation failed.";
+      toast.error(errorMsg);
+      
+      // Agar session expire ka error hai, toh user ko login page par redirect kar do (optional but recommended)
+      if (errorMsg.includes("session has expired")) {
+        setTimeout(() => {
+          window.location.href = "/login"; // Apne actual login route se replace karein agar alag hai
+        }, 2000);
+      }
     } finally {
       setProcessing(false);
       stopCycling();
