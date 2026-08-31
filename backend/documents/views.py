@@ -15,7 +15,6 @@ from rest_framework.views import APIView
 # ============================================================
 
 from docx import Document as DocxDocument
-# ✅ FIX: PyPDF2 ki jagah modern 'pypdf' use karein (better Unicode support)
 from pypdf import PdfReader
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import (
@@ -24,6 +23,8 @@ from reportlab.platypus import (
     Spacer,
 )
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from html import escape
 
 # ============================================================
@@ -90,7 +91,6 @@ class DocumentProcessor:
             return clean_extracted_text("\n\n".join(paragraphs))
 
         elif file_type == "pdf":
-            # ✅ FIX: pypdf use kar rahe hain jo Unicode ko behtar handle karta hai
             reader = PdfReader(file_path)
             text_parts = []
             for page in reader.pages:
@@ -142,16 +142,63 @@ class DocumentProcessor:
             return output_path
 
         elif output_format == "pdf":
-            document = SimpleDocTemplate(output_path, pagesize=letter, rightMargin=45, leftMargin=45, topMargin=45, bottomMargin=45)
+            document = SimpleDocTemplate(
+                output_path, 
+                pagesize=letter, 
+                rightMargin=45, 
+                leftMargin=45, 
+                topMargin=45, 
+                bottomMargin=45
+            )
+            
+            # ✅ FIX: Render (Ubuntu) ke liye guaranteed Unicode fonts
+            font_paths = [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",          # Render/Ubuntu default
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", # Alternative Ubuntu
+                "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",      # Agar Noto install ho
+                "C:\\Windows\\Fonts\\arial.ttf",                            # Windows fallback
+                "/System/Library/Fonts/Helvetica.ttc",                      # Mac fallback
+            ]
+            
+            font_found = False
+            for font_path in font_paths:
+                if os.path.exists(font_path):
+                    try:
+                        pdfmetrics.registerFont(TTFont('UnicodeFont', font_path))
+                        font_found = True
+                        print(f"✅ Successfully loaded Unicode font: {font_path}")
+                        break
+                    except Exception as e:
+                        print(f"⚠️ Font load error for {font_path}: {e}")
+                        continue
+            
             styles = getSampleStyleSheet()
+            
+            if font_found:
+                styles['Normal'].fontName = 'UnicodeFont'
+                styles['Normal'].fontSize = 11
+                styles['Normal'].leading = 14
+            else:
+                print("⚠️ WARNING: No Unicode font found. Falling back to default (non-English text may show squares).")
+            
             story = []
             for paragraph in text.split("\n\n"):
                 paragraph = paragraph.strip()
                 if not paragraph:
                     continue
+                
+                # Reportlab Paragraph handles UTF-8 natively if the font supports it.
+                # We only need to escape XML special characters.
                 safe_text = escape(paragraph)
-                story.append(Paragraph(safe_text, styles["Normal"]))
+                
+                try:
+                    story.append(Paragraph(safe_text, styles["Normal"]))
+                except Exception as e:
+                    print(f"⚠️ Paragraph creation error: {e}")
+                    story.append(Paragraph("Error rendering text.", styles["Normal"]))
+                
                 story.append(Spacer(1, 10))
+            
             document.build(story)
             return output_path
 
@@ -261,8 +308,6 @@ class DocumentUploadView(APIView):
         original_path = doc.original_file.path
 
         extracted = DocumentProcessor.extract_text(original_path, doc.file_type) or ""
-        
-        # ✅ FIX: Final cleaning before saving to DB
         extracted = clean_extracted_text(extracted)
 
         if not extracted:
