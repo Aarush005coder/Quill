@@ -159,16 +159,16 @@ Quill includes a complete **browser-to-backend speech pipeline**.
 
 ### Voice features
 
-• Browser microphone recording
-• WebM / OGG / MP4 audio support
-• FFmpeg-based audio conversion
-• 16 kHz mono WAV normalization
-• Speech recognition
-• Automatic language recognition
-• Neural voice generation
-• gTTS fallback
-• Audio playback
-• Speech-to-speech history entries
+- 🎤 **Browser microphone recording**
+- 🎵 **WebM / OGG / MP4 audio support**
+- ⚙️ **FFmpeg-based audio conversion**
+- 🎚️ **16 kHz mono WAV normalization**
+- 🧠 **Speech recognition**
+- 🌐 **Automatic language recognition**
+- 🗣️ **Neural voice generation**
+- 🔄 **gTTS fallback**
+- 🔊 **Audio playback**
+- 🕘 **Speech-to-speech history entries**
 
 ---
 
@@ -179,7 +179,7 @@ Quill also provides a separate workspace for everyday calculation and conversion
 ### Tool categories
 
 • 🔢 **Number**
-•💱 **Currency**
+• 💱 **Currency**
 • 📏 **Unit**
 • 🗃️ **Data**
 • ⚡ **Electrical**
@@ -190,13 +190,13 @@ Quill also provides a separate workspace for everyday calculation and conversion
 
 The Smart Tools interface supports workflows such as:
 
-• Number-base conversion
-• Currency conversion
-• Unit conversion
-• Data conversion
-• Electrical calculations
-• Health-related calculators
-• Specific utility calculators
+- 🔢 **Number-base conversion**
+- 💱 **Currency conversion**
+- 📏 **Unit conversion**
+- 🗃️ **Data conversion**
+- ⚡ **Electrical calculations**
+- ❤️ **Health-related calculators**
+- 🧮 **Specific utility calculators**
 
 The tool workspace is designed for fast calculations without sending basic values to unnecessary external services.
 
@@ -204,20 +204,19 @@ The tool workspace is designed for fast calculations without sending basic value
 
 ## 📄 Documents
 
-• The Documents workspace is built for multi-page file processing.
-• Document features
-• Upload documents and files
-• Multi-page document preview
-• View original page
-• View translated page
-• Auto-detect source language
-• Select target language
-• Page-by-page translation
-• Progress tracking
-• Translation history
-• Layout-aware processing workflow
-• Secure download workflow
-• Export formats such as PDF, DOCX, TXT, and HTML
+- 📤 **Upload documents and files**
+- 📑 **Multi-page document preview**
+- 👁️ **View original page**
+- 🌍 **View translated page**
+- 🔎 **Auto-detect source language**
+- 🎯 **Select target language**
+- 📄 **Page-by-page translation**
+- 📊 **Progress tracking**
+- 🕘 **Translation history**
+- 🧠 **Layout-aware processing workflow**
+- 📝 **Formatting preservation**
+- 🔐 **Secure download workflow**
+- 📥 **Export formats such as PDF, DOCX, TXT, and HTML**
 
 The interface is designed to preserve the layout, borders, and alignment of processed documents wherever supported by the workflow.
 
@@ -229,32 +228,32 @@ The Combine workspace contains document, image, and file transformation tools in
 
 ### PDF Tools
 
-• PDF Merge
-• PDF Split
-• PDF Compress
-• Rotate PDF
-• Organize PDF
-• Watermark PDF
-• PDF Color Enhance
-• N-up PDF
+• **PDF Merge**
+• **PDF Split**
+• **PDF Compress**
+• **Rotate PDF**
+• **Organize PDF**
+• **Watermark PDF**
+• **PDF Color Enhance**
+• **N-up PDF**
 
 ### Image Tools
 
-• Image Merge
-• Image to PDF
-• Image Converter
-• N-up PDF / image-sheet workflows
+• **Image Merge**
+• **Image to PDF**
+• **Image Converter**
+• **N-up PDF / image-sheet workflows**
 
 Supported image conversion workflows include common formats such as:
 **JPG · JPEG · PNG · WEBP · GIF · BMP · TIFF · ICO · SVG**
 
 ### Document Tools
 
-• Word Merge
-• PDF to Word
-• Word to PDF
-• PDF to Excel
-• Excel to PDF
+• **Word Merge**
+• **PDF to Word**
+• **Word to PDF**
+• **PDF to Excel**
+• **Excel to PDF**
 
 ---
 
