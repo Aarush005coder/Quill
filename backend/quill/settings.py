@@ -18,8 +18,8 @@ DEBUG = env.bool('DEBUG', default=True)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 # ─── EXPLICIT OAUTH VARS ───────────────────────────────────────
-BACKEND_URL = env('BACKEND_URL', default='http://127.0.0.1:8000')
-FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
+BACKEND_URL = env('BACKEND_URL', default='https://quill-a52m.onrender.com')
+FRONTEND_URL = env('FRONTEND_URL', default='https://quill-aarush01.vercel.app')
 
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')

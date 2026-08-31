@@ -105,7 +105,7 @@ const tools = [
     iconColor: "text-red-500",
     accept: ".pdf",
     multiple: true,
-    endpoint: "/api/combine/pdf-merge/",
+    endpoint: "/combine/pdf-merge/",
     historyType: "pdf_merge",
   },
   {
@@ -117,7 +117,7 @@ const tools = [
     iconColor: "text-purple-500",
     accept: "image/*",
     multiple: true,
-    endpoint: "/api/combine/image-merge/",
+    endpoint: "/combine/image-merge/",
     historyType: "image_merge",
   },
   {
@@ -129,7 +129,7 @@ const tools = [
     iconColor: "text-blue-500",
     accept: "image/*",
     multiple: true,
-    endpoint: "/api/combine/image-to-pdf/",
+    endpoint: "/combine/image-to-pdf/",
     historyType: "image_to_pdf",
   },
   {
@@ -141,7 +141,7 @@ const tools = [
     iconColor: "text-violet-500",
     accept: "image/*",
     multiple: false,
-    endpoint: "/api/combine/image-convert/",
+    endpoint: "/combine/image-convert/",
     historyType: "image_convert",
   },
   {
@@ -153,7 +153,7 @@ const tools = [
     iconColor: "text-blue-600",
     accept: ".doc,.docx",
     multiple: true,
-    endpoint: "/api/combine/word-merge/",
+    endpoint: "/combine/word-merge/",
     historyType: "word_merge",
   },
   {
@@ -165,7 +165,7 @@ const tools = [
     iconColor: "text-green-500",
     accept: ".pdf",
     multiple: false,
-    endpoint: "/api/combine/pdf-to-word/",
+    endpoint: "/combine/pdf-to-word/",
     historyType: "pdf_to_word",
   },
   {
@@ -177,7 +177,7 @@ const tools = [
     iconColor: "text-emerald-600",
     accept: ".pdf",
     multiple: false,
-    endpoint: "/api/combine/pdf-to-excel/",
+    endpoint: "/combine/pdf-to-excel/",
     historyType: "pdf_to_excel",
   },
   {
@@ -189,7 +189,7 @@ const tools = [
     iconColor: "text-green-600",
     accept: ".xlsx,.xls",
     multiple: false,
-    endpoint: "/api/combine/excel-to-pdf/",
+    endpoint: "/combine/excel-to-pdf/",
     historyType: "excel_to_pdf",
   },
   {
@@ -201,7 +201,7 @@ const tools = [
     iconColor: "text-orange-500",
     accept: ".doc,.docx",
     multiple: false,
-    endpoint: "/api/combine/word-to-pdf/",
+    endpoint: "/combine/word-to-pdf/",
     historyType: "word_to_pdf",
   },
   {
@@ -213,7 +213,7 @@ const tools = [
     iconColor: "text-red-500",
     accept: ".pdf",
     multiple: false,
-    endpoint: "/api/combine/compress-pdf/",
+    endpoint: "/combine/compress-pdf/",
     historyType: "compress_pdf",
   },
   {
@@ -225,7 +225,7 @@ const tools = [
     iconColor: "text-cyan-500",
     accept: ".pdf",
     multiple: false,
-    endpoint: "/api/combine/rotate-pdf/",
+    endpoint: "/combine/rotate-pdf/",
     historyType: "rotate_pdf",
   },
   {
@@ -237,7 +237,7 @@ const tools = [
     iconColor: "text-amber-600",
     accept: ".pdf",
     multiple: false,
-    endpoint: "/api/combine/split-pdf/",
+    endpoint: "/combine/split-pdf/",
     historyType: "split_pdf",
   },
   {
@@ -249,7 +249,7 @@ const tools = [
     iconColor: "text-teal-500",
     accept: ".pdf",
     multiple: false,
-    endpoint: "/api/combine/organize-pdf/",
+    endpoint: "/combine/organize-pdf/",
     historyType: "organize_pdf",
   },
   {
@@ -261,7 +261,7 @@ const tools = [
     iconColor: "text-purple-500",
     accept: ".pdf",
     multiple: false,
-    endpoint: "/api/combine/watermark-pdf/",
+    endpoint: "/combine/watermark-pdf/",
     historyType: "watermark_pdf",
   },
   {
@@ -273,7 +273,7 @@ const tools = [
     iconColor: "text-pink-500",
     accept: ".pdf",
     multiple: false,
-    endpoint: "/api/combine/pdf-color-enhance/",
+    endpoint: "/combine/pdf-color-enhance/",
     historyType: "pdf_color_enhance",
   },
   {
@@ -285,7 +285,7 @@ const tools = [
     iconColor: "text-indigo-500",
     accept: ".pdf,image/*",
     multiple: true,
-    endpoint: "/api/combine/nup-pdf/",
+    endpoint: "/combine/nup-pdf/",
     historyType: "nup_pdf",
   },
 ];
@@ -569,7 +569,7 @@ export default function CombinePage() {
       if (parts.length !== 3) return null;
       const payload = JSON.parse(atob(parts[1]));
       if (payload.exp - Date.now() / 1000 < 60 && refreshToken) {
-        const response = await fetch(`${API_BASE}/api/token/refresh/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refresh: refreshToken }) });
+        const response = await fetch(`${API_BASE}/token/refresh/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refresh: refreshToken }) });
         if (response.ok) {
           const data = await response.json();
           if (data.access) { token = data.access; localStorage.setItem("access_token", data.access); }
@@ -588,7 +588,7 @@ export default function CombinePage() {
     const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "") + "/api";
     const token = await getAuthToken(API_BASE);
     if (!token) { setHistoryLoading(false); return; }
-    const url = `${API_BASE}/api/combine/history/?type=${tool.historyType}&page_size=10`;
+    const url = `${API_BASE}/combine/history/?type=${tool.historyType}&page_size=10`;
     try {
       let response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (response.status === 401) {
@@ -928,7 +928,7 @@ export default function CombinePage() {
     const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
     try {
       const token = await getAuthToken(API_BASE);
-      await fetch(`${API_BASE}/api/combine/${item.id}/delete/`, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      await fetch(`${API_BASE}/combine/${item.id}/delete/`, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} });
     } catch (error) { console.error("Delete error:", error); }
     setHistory((previous) => previous.filter((entry) => entry.id !== item.id));
     showToast("success", `${item.output_name} deleted`);
@@ -939,7 +939,7 @@ export default function CombinePage() {
     setClearingHistory(true);
     const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
     const token = await getAuthToken(API_BASE);
-    for (const item of history) { try { await fetch(`${API_BASE}/api/combine/${item.id}/delete/`, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} }); } catch {} }
+    for (const item of history) { try { await fetch(`${API_BASE}/combine/${item.id}/delete/`, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} }); } catch {} }
     setHistory([]); setClearingHistory(false); setShowClearHistoryModal(false); showToast("success", "All history deleted");
   };
 
