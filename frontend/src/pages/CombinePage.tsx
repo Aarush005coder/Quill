@@ -938,23 +938,32 @@ export default function CombinePage() {
   ========================================================= */
   const downloadFromHistory = async (item: HistoryItem) => {
     if (!item.download_url) return;
+    
+    // 1. API_BASE mein pehle se '/api' hai
     const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
     const token = await getAuthToken(API_BASE);
     if (!token) return;
+    
     try {
-      // ✅ YEH 3 LINES SABSE ZAROORI HAIN:
-      let downloadUrl = item.download_url;
-      if (downloadUrl.startsWith('/api/')) {
-        downloadUrl = downloadUrl.replace('/api/', '/');
+      // 2. download_url se shuru ka '/api/' hata do taaki double na bane
+      let cleanUrl = item.download_url;
+      if (cleanUrl.startsWith('/api/')) {
+        cleanUrl = cleanUrl.substring(4); // '/api/' ko hata dega, sirf '/combine/...' bachega
       }
       
-      const response = await fetch(`${API_BASE}${downloadUrl}`, { 
+      // 3. Ab API_BASE aur cleanUrl ko jodo
+      const finalUrl = `${API_BASE}${cleanUrl}`;
+      console.log("✅ Final Download URL:", finalUrl); // Debugging ke liye
+      
+      const response = await fetch(finalUrl, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
       
       if (response.ok) { 
         triggerDownload(await response.blob(), item.output_name || "download"); 
         showToast("success", "Download successfully!"); 
+      } else {
+        console.error("❌ Download failed with status:", response.status);
       }
     } catch (error) { 
       console.error("Download error:", error); 
@@ -995,17 +1004,15 @@ export default function CombinePage() {
   };
 
   const getShareUrl = (item: HistoryItem) => {
-    // Agar download_url nahi hai, toh empty string return kardo
     if (!item.download_url) return "";
     
-    let url = item.download_url;
-    
-    // FIX: Double /api/ ko rokne ke liye
-    if (url.startsWith('/api/')) {
-      url = url.replace('/api/', '/');
+    let cleanUrl = item.download_url;
+    // Double /api/ ko rokne ke liye
+    if (cleanUrl.startsWith('/api/')) {
+      cleanUrl = cleanUrl.substring(4);
     }
     
-    return `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}${url}`;
+    return `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}${cleanUrl}`;
   };
 
   const openShareModal = (item: HistoryItem) => { setShareItem(item); setShowShareModal(true); setCopiedLink(false); };
