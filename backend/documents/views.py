@@ -10,43 +10,23 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-# ============================================================
-# DOCUMENT PROCESSING
-# ============================================================
-
 from docx import Document as DocxDocument
 from pypdf import PdfReader
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-)
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from html import escape
 
-# ============================================================
-# LOCAL APP IMPORTS
-# ============================================================
-
-from .models import (
-    DocumentUpload,
-    DocumentTemplate,
-)
-
-from .serializers import (
-    DocumentUploadSerializer,
-    DocumentTemplateSerializer,
-)
-
+from .models import DocumentUpload, DocumentTemplate
+from .serializers import DocumentUploadSerializer, DocumentTemplateSerializer
 from translation.views import TranslationService
 from history.utils import save_to_history
 
 
 # ═════════════════════════════════════════════════════════════
-# HELPER: TEXT CLEANING (ULTIMATE FIX FOR PAGE EXPLOSION)
+# HELPER: TEXT CLEANING (PREVENTS 5-PAGE BLANK EXPLOSION)
 # ═════════════════════════════════════════════════════════════
 
 def clean_extracted_text(text):
@@ -136,7 +116,6 @@ class DocumentProcessor:
 
         elif output_format == "docx":
             document = DocxDocument()
-            # Split by double space or explicit markers if needed, but single paragraphs are safer
             document.add_paragraph(text)
             document.save(output_path)
             return output_path
@@ -170,7 +149,7 @@ class DocumentProcessor:
                     print("⚠️ WARNING: No Unicode font found. Falling back to Helvetica.")
                     pdf.set_font('Helvetica', '', 11)
                 
-                # Since text is already cleaned into a single continuous string with spaces,
+                # Since text is already cleaned into a continuous string with spaces,
                 # multi_cell will word-wrap it perfectly without creating blank pages.
                 pdf.multi_cell(0, 8, text)
                 
@@ -329,7 +308,6 @@ class DocumentUploadView(APIView):
         src = 'autodetect' if source_lang == 'auto' else source_lang
         max_chunk = 3500
         
-        # Since text is now a clean single block, we split by spaces for safe chunking
         words = text.split(' ')
         chunks = []
         current_chunk = ""
@@ -348,27 +326,38 @@ class DocumentUploadView(APIView):
         translated_chunks = []
         for i, chunk in enumerate(chunks):
             try:
-                print(f"Translating chunk {i+1}/{len(chunks)}...")
+                print(f"Translating chunk {i+1}/{len(chunks)} (Original Length: {len(chunk)})...")
                 translated = TranslationService.translate(text=chunk, source_lang=src, target_lang=target_lang, mode="text-text")
                 
-                # CRITICAL: Ensure translation is not empty or just whitespace
-                if translated and len(translated.strip()) > 10:
-                    translated_chunks.append(translated.strip())
+                translated_str = str(translated).strip()
+                print(f"DEBUG Translation API Response: {repr(translated_str[:100])}")
+
+                # 🔥 CRITICAL FIX 1: Check for obvious API error messages
+                error_keywords = ["LIMIT", "ERROR", "500", "RATE", "EXCEEDED", "TOO MANY", "HTML>", "<!DOCTYPE"]
+                is_error = any(keyword in translated_str.upper() for keyword in error_keywords)
+                
+                # 🔥 CRITICAL FIX 2: A valid translation should be at least 30% of the original chunk's length
+                min_expected_len = len(chunk) * 0.3 
+                
+                if translated_str and not is_error and len(translated_str) >= min_expected_len:
+                    translated_chunks.append(translated_str)
+                    print(f"✅ Chunk {i+1} translated successfully.")
                 else:
-                    print(f"⚠️ Chunk {i+1} translation empty. Keeping original.")
+                    print(f"⚠️ Chunk {i+1} translation REJECTED (Error: {is_error}, Length: {len(translated_str)}, Expected min: {int(min_expected_len)}). Keeping original text.")
                     translated_chunks.append(chunk)
                     
             except Exception as e:
-                print(f"❌ Chunk {i+1} translation FAILED: {e}. Keeping original.")
+                print(f"❌ Chunk {i+1} translation FAILED with exception: {e}. Keeping original.")
                 translated_chunks.append(chunk)
 
-        return " ".join(translated_chunks)
+        final_text = " ".join(translated_chunks)
+        print(f"✅ Translation complete. Final text length: {len(final_text)}")
+        return final_text
 
 
 # ============================================================
-# REMAINING VIEWS (List, Detail, Download, Delete, Templates)
+# REMAINING VIEWS (Unchanged, fully working)
 # ============================================================
-# (Ye sab waise hi hain, unme koi change nahi kiya gaya hai)
 
 class DocumentListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
