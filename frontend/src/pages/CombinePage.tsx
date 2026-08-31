@@ -942,15 +942,23 @@ export default function CombinePage() {
     const token = await getAuthToken(API_BASE);
     if (!token) return;
     try {
-      // FIX: Double /api/ ko rokne ke liye
+      // ✅ YEH 3 LINES SABSE ZAROORI HAIN:
       let downloadUrl = item.download_url;
       if (downloadUrl.startsWith('/api/')) {
         downloadUrl = downloadUrl.replace('/api/', '/');
       }
       
-      const response = await fetch(`${API_BASE}${downloadUrl}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (response.ok) { triggerDownload(await response.blob(), item.output_name || "download"); showToast("success", "Download successfully!"); }
-    } catch (error) { console.error("Download error:", error); }
+      const response = await fetch(`${API_BASE}${downloadUrl}`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      
+      if (response.ok) { 
+        triggerDownload(await response.blob(), item.output_name || "download"); 
+        showToast("success", "Download successfully!"); 
+      }
+    } catch (error) { 
+      console.error("Download error:", error); 
+    }
   };
 
   const refreshHistory = async () => { if (activeTool) await fetchHistory(activeTool); };
