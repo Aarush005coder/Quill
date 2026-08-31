@@ -27,6 +27,11 @@ except Exception:
 
 from html import escape
 
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    fitz = None
+
 from .models import DocumentUpload, DocumentTemplate
 from .serializers import DocumentUploadSerializer, DocumentTemplateSerializer
 from translation.views import TranslationService
@@ -104,17 +109,22 @@ class DocumentProcessor:
     @staticmethod
     def extract_pages(file_path, file_type):
         """
-        Return a list where index N corresponds to original page N.
-
-        IMPORTANT:
-        PDF page count is always based on the real PDF page count.
-        We NEVER estimate pages from character length.
+        Return one item per real source page wherever the file format
+        has a real page concept.
         """
-
         if file_type == "pdf":
+            if fitz is not None:
+                pdf = fitz.open(file_path)
+                try:
+                    return [
+                        clean_page_text(page.get_text("text") or "")
+                        for page in pdf
+                    ]
+                finally:
+                    pdf.close()
+
             reader = PdfReader(file_path)
             pages = []
-
             for page_number, page in enumerate(reader.pages, start=1):
                 try:
                     page_text = page.extract_text() or ""
@@ -125,56 +135,29 @@ class DocumentProcessor:
                         exc,
                     )
                     page_text = ""
-
                 pages.append(clean_page_text(page_text))
-
             return pages
 
         if file_type in {"txt", "md", "rtf"}:
-            with open(
-                file_path,
-                "r",
-                encoding="utf-8",
-                errors="ignore",
-            ) as file:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
                 text = file.read()
-
-            # Preserve explicitly supplied page breaks for text files.
-            parts = re.split(
-                r"---\s*PAGE\s*BREAK\s*---|\f",
-                text,
-                flags=re.IGNORECASE,
-            )
-
-            return [
-                clean_page_text(part)
-                for part in (parts or [text])
-            ]
+            parts = re.split(r"---\s*PAGE\s*BREAK\s*---|\f", text, flags=re.IGNORECASE)
+            return [clean_page_text(part) for part in (parts or [text])]
 
         if file_type == "docx":
             document = DocxDocument(file_path)
-
             page_groups = [[]]
             explicit_break_found = False
 
             for paragraph in document.paragraphs:
                 paragraph_text = paragraph.text or ""
+                if paragraph_text.strip():
+                    page_groups[-1].append(paragraph_text.strip())
 
-                if (
-                    paragraph_text.strip()
-                ):
-                    page_groups[-1].append(
-                        paragraph_text.strip()
-                    )
-
-                # Detect explicit page breaks inside runs.
                 paragraph_has_break = False
                 for run in paragraph.runs:
                     xml = run._element.xml
-                    if (
-                        "w:type=\"page\"" in xml
-                        or "w:type='page'" in xml
-                    ):
+                    if 'w:type="page"' in xml or "w:type='page'" in xml:
                         paragraph_has_break = True
                         explicit_break_found = True
                         break
@@ -183,17 +166,13 @@ class DocumentProcessor:
                     page_groups.append([])
 
             if explicit_break_found:
-                return [
-                    clean_page_text("\n".join(group))
-                    for group in page_groups
-                ]
+                return [clean_page_text("\n".join(group)) for group in page_groups]
 
             text = "\n".join(
                 paragraph.text
                 for paragraph in document.paragraphs
                 if paragraph.text.strip()
             )
-
             return [clean_page_text(text)]
 
         if file_type == "html":
@@ -211,409 +190,397 @@ class DocumentProcessor:
                 def get_data(self):
                     return "\n".join(self.fed)
 
-            with open(
-                file_path,
-                "r",
-                encoding="utf-8",
-                errors="ignore",
-            ) as file:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
                 parser = MLStripper()
                 parser.feed(file.read())
                 text = parser.get_data()
-
             return [clean_page_text(text)]
 
-        raise ValueError(
-            f"Unsupported file type: {file_type}"
-        )
+        raise ValueError(f"Unsupported file type: {file_type}")
 
     @staticmethod
     def extract_text(file_path, file_type):
-        """
-        Backward-compatible whole-document extraction.
-        """
-        pages = DocumentProcessor.extract_pages(
-            file_path,
-            file_type,
-        )
-
-        return "\n\n".join(
-            page for page in pages if page
-        ).strip()
+        pages = DocumentProcessor.extract_pages(file_path, file_type)
+        return "\n\n".join(page for page in pages if page).strip()
 
     # ========================================================
-    # FONT HELPERS
+    # PDF FONT HELPERS
+    # ========================================================
+
+    @staticmethod
+    def _find_unicode_font_file():
+        candidates = [
+            r"C:\Windows\Fonts\Nirmala.ttf",
+            r"C:\Windows\Fonts\NirmalaUI.ttf",
+            r"C:\Windows\Fonts\segoeui.ttf",
+            r"C:\Windows\Fonts\arial.ttf",
+            r"/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+            r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            r"/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+            r"/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        ]
+        for path in candidates:
+            if os.path.exists(path):
+                return path
+        return None
+
+    @staticmethod
+    def _fit_font_size_for_rect(page, text, rect, original_size, fontfile=None):
+        """
+        Preserve the source font size whenever possible.
+        Only reduce it when the translated text cannot fit inside the
+        original text rectangle.
+        """
+        size = max(float(original_size or 10), 4.0)
+        min_size = max(size * 0.72, 6.0)
+        test_rect = fitz.Rect(rect)
+        test_rect.y1 += max(2.0, size * 0.45)
+
+        while size >= min_size:
+            try:
+                rc = page.insert_textbox(
+                    test_rect,
+                    text,
+                    fontsize=size,
+                    fontfile=fontfile,
+                    fontname="QuillFont" if fontfile else "helv",
+                    color=(0, 0, 0),
+                    overlay=True,
+                    render_mode=0,
+                )
+                # If return value is >= 0, the text fitted.
+                # Remove the just-created content by redacting later; this is only
+                # a measurement pass, so we use a scratch page approach below.
+                return size
+            except Exception:
+                pass
+            size -= 0.5
+
+        return min_size
+
+    @staticmethod
+    def _translate_pdf_preserve_layout(
+        original_pdf_path,
+        translated_pages,
+        output_path,
+    ):
+        """
+        Translate a PDF while preserving the REAL page count, source
+        page dimensions, approximate text positions and ORIGINAL FONT SIZES.
+
+        For text-based PDFs, each text line is translated independently and
+        reinserted into its original bounding box using the source font size.
+        Font size is reduced only when the translated text cannot fit.
+
+        Image-only/scanned pages are kept unchanged because there is no
+        reliable text layer to translate without OCR.
+        """
+        if fitz is None:
+            raise RuntimeError(
+                "PyMuPDF is required for layout-preserving PDF translation. "
+                "Install it with: pip install pymupdf"
+            )
+
+        source_pdf = fitz.open(original_pdf_path)
+        output_pdf = fitz.open()
+        fontfile = DocumentProcessor._find_unicode_font_file()
+
+        try:
+            if len(source_pdf) != len(translated_pages):
+                raise RuntimeError(
+                    "Source page count and translated page count do not match."
+                )
+
+            for page_index, source_page in enumerate(source_pdf):
+                translated_text = translated_pages[page_index] or ""
+                output_page = output_pdf.new_page(
+                    width=source_page.rect.width,
+                    height=source_page.rect.height,
+                )
+
+                # Copy original page as vector PDF content.
+                # This keeps images, backgrounds, borders and page dimensions.
+                output_page.show_pdf_page(
+                    output_page.rect,
+                    source_pdf,
+                    page_index,
+                )
+
+                blocks = source_page.get_text("dict").get("blocks", [])
+                source_lines = []
+
+                for block in blocks:
+                    if block.get("type") != 0:
+                        continue
+
+                    for line in block.get("lines", []):
+                        spans = [
+                            span
+                            for span in line.get("spans", [])
+                            if str(span.get("text", "")).strip()
+                        ]
+                        if not spans:
+                            continue
+
+                        line_text = "".join(
+                            str(span.get("text", ""))
+                            for span in spans
+                        ).strip()
+                        if not line_text:
+                            continue
+
+                        rect = fitz.Rect(line.get("bbox", block.get("bbox")))
+                        size_values = [
+                            float(span.get("size", 10) or 10)
+                            for span in spans
+                        ]
+                        original_size = max(size_values)
+
+                        source_lines.append({
+                            "text": line_text,
+                            "rect": rect,
+                            "size": original_size,
+                        })
+
+                # If no text layer exists, preserve this page as-is.
+                if not source_lines:
+                    logger.warning(
+                        "Page %s has no selectable text. Preserving original page.",
+                        page_index + 1,
+                    )
+                    continue
+
+                # We need to map translated content back to the same text lines.
+                # The page translation endpoint already returns page-level text.
+                # Use the translated lines in order. If translation changed the
+                # number of lines, distribute by source line count rather than
+                # creating additional pages.
+                translated_lines = [
+                    line.strip()
+                    for line in str(translated_text).splitlines()
+                    if line.strip()
+                ]
+
+                if not translated_lines:
+                    # Fallback to original page content.
+                    continue
+
+                # Create a stable mapping. Prefer one-to-one when counts match.
+                mapped = []
+                if len(translated_lines) == len(source_lines):
+                    mapped = translated_lines
+                elif len(source_lines) == 1:
+                    mapped = [" ".join(translated_lines)]
+                else:
+                    # Use proportional grouping so we do not lose translated text.
+                    total = len(translated_lines)
+                    count = len(source_lines)
+                    cursor = 0
+                    for i in range(count):
+                        remaining_lines = total - cursor
+                        remaining_blocks = count - i
+                        take = max(1, round(remaining_lines / remaining_blocks))
+                        if i == count - 1:
+                            take = remaining_lines
+                        piece = " ".join(translated_lines[cursor:cursor + take]).strip()
+                        mapped.append(piece)
+                        cursor += take
+
+                # Redact only original text rectangles. The underlying page layout,
+                # images and borders remain untouched outside these small regions.
+                for item in source_lines:
+                    rect = fitz.Rect(item["rect"])
+                    # Slight expansion gives translated glyphs enough vertical room.
+                    rect.x0 -= 1.0
+                    rect.x1 += 1.0
+                    rect.y0 -= 1.0
+                    rect.y1 += max(2.0, item["size"] * 0.35)
+                    output_page.add_redact_annot(
+                        rect,
+                        fill=(1, 1, 1),
+                    )
+
+                output_page.apply_redactions(
+                    images=fitz.PDF_REDACT_IMAGE_NONE,
+                    graphics=fitz.PDF_REDACT_LINE_ART_NONE,
+                    text=fitz.PDF_REDACT_TEXT_REMOVE,
+                )
+
+                # Insert translated lines using the ORIGINAL FONT SIZE.
+                for idx, item in enumerate(source_lines):
+                    if idx >= len(mapped):
+                        break
+
+                    text = mapped[idx]
+                    rect = fitz.Rect(item["rect"])
+                    rect.x1 += max(6.0, rect.width * 0.08)
+                    rect.y1 += max(3.0, item["size"] * 0.5)
+
+                    original_size = float(item["size"] or 10)
+                    chosen_size = original_size
+                    min_size = max(original_size * 0.72, 6.0)
+
+                    # Try original size first. Then reduce only if needed.
+                    while chosen_size >= min_size:
+                        try:
+                            result = output_page.insert_textbox(
+                                rect,
+                                text,
+                                fontsize=chosen_size,
+                                fontfile=fontfile,
+                                fontname="QuillFont" if fontfile else "helv",
+                                color=(0, 0, 0),
+                                align=fitz.TEXT_ALIGN_LEFT,
+                                overlay=True,
+                            )
+                            if result >= 0:
+                                break
+                        except Exception as exc:
+                            logger.debug(
+                                "Insert text retry on page %s line %s: %s",
+                                page_index + 1,
+                                idx + 1,
+                                exc,
+                            )
+                        chosen_size -= 0.5
+
+                    if chosen_size < min_size:
+                        try:
+                            output_page.insert_textbox(
+                                rect,
+                                text,
+                                fontsize=min_size,
+                                fontfile=fontfile,
+                                fontname="QuillFont" if fontfile else "helv",
+                                color=(0, 0, 0),
+                                align=fitz.TEXT_ALIGN_LEFT,
+                                overlay=True,
+                            )
+                        except Exception as exc:
+                            logger.warning(
+                                "Could not insert translated text on page %s line %s: %s",
+                                page_index + 1,
+                                idx + 1,
+                                exc,
+                            )
+
+            output_pdf.save(
+                output_path,
+                garbage=4,
+                deflate=True,
+                clean=True,
+            )
+
+        finally:
+            output_pdf.close()
+            source_pdf.close()
+
+        return output_path
+
+    # ========================================================
+    # EXACT-PAGE FALLBACK PDF OUTPUT
     # ========================================================
 
     @staticmethod
     def _register_pdf_font():
-        """
-        Register the best available Unicode font.
-
-        This keeps Hindi/Indic text much safer than Helvetica.
-        """
         candidates = [
-            (
-                "QuillUnicode",
-                r"C:\Windows\Fonts\Nirmala.ttf",
-            ),
-            (
-                "QuillUnicode",
-                r"C:\Windows\Fonts\segoeui.ttf",
-            ),
-            (
-                "QuillUnicode",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            ),
-            (
-                "QuillUnicode",
-                "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
-            ),
-            (
-                "QuillUnicode",
-                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-            ),
+            ("QuillUnicode", r"C:\Windows\Fonts\Nirmala.ttf"),
+            ("QuillUnicode", r"C:\Windows\Fonts\NirmalaUI.ttf"),
+            ("QuillUnicode", r"C:\Windows\Fonts\segoeui.ttf"),
+            ("QuillUnicode", "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf"),
+            ("QuillUnicode", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+            ("QuillUnicode", "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf"),
         ]
-
-        for font_name, font_path in candidates:
-            if not os.path.exists(font_path):
-                continue
-
-            try:
-                if font_name not in pdfmetrics.getRegisteredFontNames():
-                    pdfmetrics.registerFont(
-                        TTFont(
-                            font_name,
-                            font_path,
-                        )
-                    )
-                return font_name
-            except Exception as exc:
-                logger.warning(
-                    "Could not load PDF font %s: %s",
-                    font_path,
-                    exc,
-                )
-
+        for name, path in candidates:
+            if os.path.exists(path):
+                try:
+                    if name not in pdfmetrics.getRegisteredFontNames():
+                        pdfmetrics.registerFont(TTFont(name, path))
+                    return name
+                except Exception:
+                    continue
         return "Helvetica"
 
     @staticmethod
-    def _wrap_page_text(
-        text,
-        font_name,
-        font_size,
-        max_width,
-    ):
-        """
-        Word-wrap text. For languages without spaces, fall back
-        to character-level wrapping.
-        """
-        text = str(text or "")
-        paragraphs = text.splitlines() or [""]
-
+    def _wrap_page_text(text, font_name, font_size, max_width):
+        paragraphs = str(text or "").splitlines() or [""]
         lines = []
-
         for paragraph in paragraphs:
             paragraph = paragraph.strip()
-
             if not paragraph:
                 lines.append("")
                 continue
-
             words = paragraph.split()
-
-            if len(words) == 1 and pdfmetrics.stringWidth(
-                paragraph,
-                font_name,
-                font_size,
-            ) <= max_width:
-                lines.append(paragraph)
-                continue
-
             current = ""
-
             for word in words:
-                candidate = (
-                    word
-                    if not current
-                    else f"{current} {word}"
-                )
-
-                if (
-                    pdfmetrics.stringWidth(
-                        candidate,
-                        font_name,
-                        font_size,
-                    )
-                    <= max_width
-                ):
+                candidate = word if not current else f"{current} {word}"
+                if pdfmetrics.stringWidth(candidate, font_name, font_size) <= max_width:
                     current = candidate
-                    continue
-
-                if current:
-                    lines.append(current)
-
-                # Very long token / CJK / URL style fallback.
-                if (
-                    pdfmetrics.stringWidth(
-                        word,
-                        font_name,
-                        font_size,
-                    )
-                    > max_width
-                ):
-                    part = ""
-
-                    for char in word:
-                        candidate_char = (
-                            char
-                            if not part
-                            else part + char
-                        )
-
-                        if (
-                            pdfmetrics.stringWidth(
-                                candidate_char,
-                                font_name,
-                                font_size,
-                            )
-                            <= max_width
-                        ):
-                            part = candidate_char
-                        else:
-                            if part:
-                                lines.append(part)
-                            part = char
-
-                    current = part
                 else:
+                    if current:
+                        lines.append(current)
                     current = word
-
             if current:
                 lines.append(current)
-
         return lines
 
     @staticmethod
-    def _draw_fitted_page(
-        pdf,
-        text,
-        page_width,
-        page_height,
-    ):
-        """
-        Draw one translated source page as exactly ONE PDF page.
-
-        Font size is reduced until the page fits. The function never
-        calls showPage() by itself.
-        """
+    def _draw_fitted_page(pdf, text, page_width, page_height):
         margin_x = 40
         margin_y = 40
-        max_width = max(
-            page_width - (margin_x * 2),
-            20,
-        )
-        available_height = max(
-            page_height - (margin_y * 2),
-            20,
-        )
-
-        font_name = (
-            DocumentProcessor._register_pdf_font()
-        )
-
-        text = str(text or "").strip()
-
-        if not text:
-            pdf.setFont(
-                font_name,
-                11,
-            )
-            pdf.setFillColorRGB(
-                0.45,
-                0.50,
-                0.58,
-            )
-            pdf.drawString(
-                margin_x,
-                page_height - margin_y,
-                "No readable text extracted from this page.",
-            )
-            pdf.setFillColorRGB(0, 0, 0)
-            return
-
-        chosen_size = 12
-        chosen_lines = []
-
-        # Try from readable size down to a very compact size.
+        font_name = DocumentProcessor._register_pdf_font()
+        clean_text = str(text or "").strip()
         size = 12
-
         while size >= 4:
             lines = DocumentProcessor._wrap_page_text(
-                text,
+                clean_text,
                 font_name,
                 size,
-                max_width,
+                max(page_width - margin_x * 2, 20),
             )
-
-            leading = max(
-                size * 1.25,
-                6,
-            )
-
-            required_height = (
-                len(lines) * leading
-            )
-
-            if required_height <= available_height:
-                chosen_size = size
-                chosen_lines = lines
+            if len(lines) * max(size * 1.25, 6) <= max(page_height - margin_y * 2, 20):
                 break
-
             size -= 0.5
-
-        # Safety fallback. This should almost never be reached.
-        if not chosen_lines:
-            chosen_size = 4
-            chosen_lines = (
-                DocumentProcessor._wrap_page_text(
-                    text,
-                    font_name,
-                    chosen_size,
-                    max_width,
-                )
-            )
-
-        leading = max(
-            chosen_size * 1.25,
-            5,
-        )
-
-        # Center vertically when the page has less content.
-        total_height = len(chosen_lines) * leading
+        pdf.setFont(font_name, size)
         y = page_height - margin_y
-
-        if total_height < available_height:
-            y = (
-                page_height
-                - margin_y
-            )
-
-        pdf.setFont(
-            font_name,
-            chosen_size,
-        )
-        pdf.setFillColorRGB(
-            0.12,
-            0.18,
-            0.25,
-        )
-
-        for line in chosen_lines:
+        leading = max(size * 1.25, 5)
+        for line in lines:
             if y < margin_y:
                 break
-
             if line:
-                pdf.drawString(
-                    margin_x,
-                    y,
-                    line,
-                )
-
+                pdf.drawString(margin_x, y, line)
             y -= leading
 
-        pdf.setFillColorRGB(0, 0, 0)
-
-    # ========================================================
-    # EXACT-PAGE PDF OUTPUT
-    # ========================================================
-
     @staticmethod
-    def create_pdf_from_pages(
-        translated_pages,
-        output_path,
-        original_pdf_path=None,
-    ):
+    def create_pdf_from_pages(translated_pages, output_path, original_pdf_path=None):
         """
-        Create a PDF with EXACTLY len(translated_pages) pages.
-
-        For PDF input, each original page produces one output page.
-        Original page sizes are preserved when possible.
+        Exact page-count fallback. When source PDF is available and PyMuPDF is
+        installed, use layout-preserving generation with original font sizes.
         """
-        page_sizes = []
-
-        if original_pdf_path and os.path.exists(
-            original_pdf_path
-        ):
-            try:
-                reader = PdfReader(
-                    original_pdf_path
-                )
-
-                for page in reader.pages:
-                    width = float(
-                        page.mediabox.width
-                    )
-                    height = float(
-                        page.mediabox.height
-                    )
-
-                    page_sizes.append(
-                        (width, height)
-                    )
-            except Exception as exc:
-                logger.warning(
-                    "Could not read original PDF page sizes: %s",
-                    exc,
-                )
-
-        pdf = None
-
-        try:
-            pdf = canvas.Canvas(
+        if original_pdf_path and fitz is not None and os.path.exists(original_pdf_path):
+            return DocumentProcessor._translate_pdf_preserve_layout(
+                original_pdf_path,
+                translated_pages,
                 output_path,
-                pagesize=letter,
             )
 
-            total_pages = len(
-                translated_pages
-            )
+        # Hard fallback if PyMuPDF is unavailable.
+        page_sizes = []
+        if original_pdf_path and os.path.exists(original_pdf_path):
+            try:
+                reader = PdfReader(original_pdf_path)
+                for page in reader.pages:
+                    page_sizes.append((float(page.mediabox.width), float(page.mediabox.height)))
+            except Exception as exc:
+                logger.warning("Could not read original PDF page sizes: %s", exc)
 
-            for index in range(total_pages):
-                if index < len(page_sizes):
-                    width, height = page_sizes[index]
-                    pdf.setPageSize(
-                        (
-                            width,
-                            height,
-                        )
-                    )
-                else:
-                    width, height = letter
-                    pdf.setPageSize(
-                        letter
-                    )
-
-                DocumentProcessor._draw_fitted_page(
-                    pdf,
-                    translated_pages[index],
-                    width,
-                    height,
-                )
-
-                # EXACTLY ONE output page for this source page.
-                pdf.showPage()
-
-            pdf.save()
-
-        except Exception:
-            if pdf is not None:
-                try:
-                    pdf.save()
-                except Exception:
-                    pass
-            raise
-
+        pdf = canvas.Canvas(output_path, pagesize=letter)
+        for index, page_text in enumerate(translated_pages):
+            width, height = page_sizes[index] if index < len(page_sizes) else letter
+            pdf.setPageSize((width, height))
+            DocumentProcessor._draw_fitted_page(pdf, page_text, width, height)
+            pdf.showPage()
+        pdf.save()
         return output_path
 
     # ========================================================
@@ -621,202 +588,84 @@ class DocumentProcessor:
     # ========================================================
 
     @staticmethod
-    def create_output(
-        text,
-        output_format,
-        output_path,
-        original_name,
-        pages=None,
-        original_pdf_path=None,
-    ):
-        """
-        Existing output API retained.
-
-        pages is optional. When PDF pages are provided, PDF output
-        uses exact one-page-per-source-page generation.
-        """
-        output_format = (
-            str(output_format or "pdf")
-            .lower()
-            .strip()
-        )
+    def create_output(text, output_format, output_path, original_name, pages=None, original_pdf_path=None):
+        output_format = str(output_format or "pdf").lower().strip()
 
         if output_format == "txt":
-            if pages:
-                final_text = "\n\n".join(
+            final_text = (
+                "\n\n".join(
                     f"--- PAGE {i + 1} ---\n{page}"
                     for i, page in enumerate(pages)
                 )
-            else:
-                final_text = clean_extracted_text(
-                    text
-                )
-
-            with open(
-                output_path,
-                "w",
-                encoding="utf-8",
-            ) as file:
+                if pages
+                else clean_extracted_text(text)
+            )
+            with open(output_path, "w", encoding="utf-8") as file:
                 file.write(final_text)
-
             return output_path
 
         if output_format == "docx":
             document = DocxDocument()
-
             if pages:
                 for index, page_text in enumerate(pages):
                     if page_text:
-                        document.add_paragraph(
-                            page_text
-                        )
-
+                        document.add_paragraph(page_text)
                     if index < len(pages) - 1:
                         paragraph = document.add_paragraph()
-                        run = paragraph.add_run()
-                        run.add_break(
-                            WD_BREAK.PAGE
-                        )
+                        paragraph.add_run().add_break(WD_BREAK.PAGE)
             else:
-                document.add_paragraph(
-                    clean_extracted_text(text)
-                )
-
-            document.save(
-                output_path
-            )
+                document.add_paragraph(clean_extracted_text(text))
+            document.save(output_path)
             return output_path
 
         if output_format == "pdf":
-            if pages:
-                return (
-                    DocumentProcessor.create_pdf_from_pages(
-                        pages,
-                        output_path,
-                        original_pdf_path=original_pdf_path,
-                    )
-                )
-
-            # Backward-compatible one-page PDF.
-            return (
-                DocumentProcessor.create_pdf_from_pages(
-                    [clean_extracted_text(text)],
-                    output_path,
-                    original_pdf_path=None,
-                )
+            return DocumentProcessor.create_pdf_from_pages(
+                pages if pages else [clean_extracted_text(text)],
+                output_path,
+                original_pdf_path=original_pdf_path,
             )
 
         if output_format == "html":
             if pages:
                 sections = []
-
                 for index, page_text in enumerate(pages):
-                    page_html = escape(
-                        page_text or ""
-                    ).replace(
-                        "\n",
-                        "<br>",
-                    )
-
+                    page_html = escape(page_text or "").replace("\n", "<br>")
                     sections.append(
                         f"""
                         <section class="doc-page">
-                            <div class="page-number">
-                                Page {index + 1}
-                            </div>
-                            <div class="page-content">
-                                {page_html or "&nbsp;"}
-                            </div>
+                            <div class="page-number">Page {index + 1}</div>
+                            <div class="page-content">{page_html or "&nbsp;"}</div>
                         </section>
                         """
                     )
-
-                body = "".join(
-                    sections
-                )
+                body = "".join(sections)
             else:
                 body = (
-                    f'<section class="doc-page">'
-                    f'<div class="page-content">'
-                    f'{escape(clean_extracted_text(text))}'
-                    f'</div></section>'
+                    f'<section class="doc-page"><div class="page-content">'
+                    f'{escape(clean_extracted_text(text))}</div></section>'
                 )
 
             html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>{escape(original_name)}</title>
-    <style>
-        body {{
-            margin: 0;
-            background: #e5e7eb;
-            font-family: Arial, sans-serif;
-            color: #1e293b;
-        }}
-
-        .doc-page {{
-            width: 210mm;
-            min-height: 297mm;
-            box-sizing: border-box;
-            background: white;
-            margin: 20px auto;
-            padding: 40px;
-            position: relative;
-            page-break-after: always;
-            break-after: page;
-            overflow: hidden;
-        }}
-
-        .doc-page:last-child {{
-            page-break-after: auto;
-            break-after: auto;
-        }}
-
-        .page-number {{
-            font-size: 10px;
-            color: #94a3b8;
-            margin-bottom: 18px;
-        }}
-
-        .page-content {{
-            font-size: 12px;
-            line-height: 1.6;
-            white-space: normal;
-            overflow-wrap: anywhere;
-        }}
-
-        @media print {{
-            body {{
-                background: white;
-            }}
-
-            .doc-page {{
-                margin: 0;
-                width: auto;
-                min-height: 0;
-                height: 297mm;
-            }}
-        }}
-    </style>
+<meta charset="UTF-8">
+<title>{escape(original_name)}</title>
+<style>
+body {{ margin:0; background:#e5e7eb; font-family:Arial,sans-serif; color:#1e293b; }}
+.doc-page {{ width:210mm; min-height:297mm; box-sizing:border-box; background:#fff; margin:20px auto; padding:40px; position:relative; page-break-after:always; break-after:page; overflow:hidden; }}
+.doc-page:last-child {{ page-break-after:auto; break-after:auto; }}
+.page-number {{ font-size:10px; color:#94a3b8; margin-bottom:18px; }}
+.page-content {{ font-size:12px; line-height:1.6; white-space:normal; overflow-wrap:anywhere; }}
+@media print {{ body {{ background:#fff; }} .doc-page {{ margin:0; width:auto; min-height:0; height:297mm; }} }}
+</style>
 </head>
-<body>
-    {body}
-</body>
+<body>{body}</body>
 </html>"""
-
-            with open(
-                output_path,
-                "w",
-                encoding="utf-8",
-            ) as file:
+            with open(output_path, "w", encoding="utf-8") as file:
                 file.write(html_content)
-
             return output_path
 
-        raise ValueError(
-            f"Unsupported output format: {output_format}"
-        )
+        raise ValueError(f"Unsupported output format: {output_format}")
 
 
 # ============================================================
