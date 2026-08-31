@@ -584,20 +584,50 @@ export default function CombinePage() {
   HISTORY
   ========================================================= */
   const fetchHistory = async (tool: typeof tools[0]) => {
-    setHistoryLoading(true);
-    const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "") + "/api";
-    const token = await getAuthToken(API_BASE);
-    if (!token) { setHistoryLoading(false); return; }
-    const url = `${API_BASE}/combine/history/?type=${tool.historyType}&page_size=10`;
-    try {
-      let response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (response.status === 401) {
-        const secondToken = await getAuthToken(API_BASE);
-        if (secondToken) response = await fetch(url, { headers: { Authorization: `Bearer ${secondToken}` } });
+  setHistoryLoading(true);
+  const API_BASE = (process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "") + "/api";
+  
+  const token = await getAuthToken(API_BASE);
+  
+  // 🔍 DEBUG: Yeh line add karein
+  console.log("DEBUG TOKEN VALUE:", token); 
+
+  if (!token) { 
+    console.warn("No token found! Redirecting or stopping.");
+    setHistoryLoading(false); 
+    return; 
+  }
+  
+  const url = `${API_BASE}/combine/history/?type=${tool.historyType}&page_size=10`;
+  try {
+    let response = await fetch(url, { 
+      headers: { 
+        Authorization: `Bearer ${token}` 
+      } 
+    });
+    
+    // 🔍 DEBUG: Response status bhi dekh lein
+    console.log("History API Response Status:", response.status);
+
+    if (response.status === 401) {
+      const secondToken = await getAuthToken(API_BASE);
+      if (secondToken) {
+        response = await fetch(url, { headers: { Authorization: `Bearer ${secondToken}` } });
       }
-      if (response.ok) { const data = await response.json(); setHistory(data.data || []); }
-    } catch (error) { console.error("History error:", error); } finally { setHistoryLoading(false); }
-  };
+    }
+    
+    if (response.ok) { 
+      const data = await response.json(); 
+      setHistory(data.data || []); 
+    } else {
+      console.error("Failed to fetch history, status:", response.status);
+    }
+  } catch (error) { 
+    console.error("History error:", error); 
+  } finally { 
+    setHistoryLoading(false); 
+  }
+};
 
   useEffect(() => {
     if (!activeTool) { setHistory([]); return; }
