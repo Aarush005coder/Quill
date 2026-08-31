@@ -22,7 +22,7 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
 )
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from html import escape
@@ -174,12 +174,19 @@ class DocumentProcessor:
             
             styles = getSampleStyleSheet()
             
+            # ✅ FIX: Explicitly create a custom ParagraphStyle for Unicode
             if font_found:
-                styles['Normal'].fontName = 'UnicodeFont'
-                styles['Normal'].fontSize = 11
-                styles['Normal'].leading = 14
+                custom_style = ParagraphStyle(
+                    name='UnicodeNormal',
+                    parent=styles['Normal'],
+                    fontName='UnicodeFont',
+                    fontSize=11,
+                    leading=14,
+                    wordWrap='CJK' # Better wrapping for complex scripts like Hindi
+                )
             else:
-                print("⚠️ WARNING: No Unicode font found. Falling back to default (non-English text may show squares).")
+                custom_style = styles['Normal']
+                print("⚠️ WARNING: No Unicode font found. Falling back to default.")
             
             story = []
             for paragraph in text.split("\n\n"):
@@ -187,12 +194,11 @@ class DocumentProcessor:
                 if not paragraph:
                     continue
                 
-                # Reportlab Paragraph handles UTF-8 natively if the font supports it.
-                # We only need to escape XML special characters.
+                # Escape HTML special chars, but keep Unicode intact
                 safe_text = escape(paragraph)
                 
                 try:
-                    story.append(Paragraph(safe_text, styles["Normal"]))
+                    story.append(Paragraph(safe_text, custom_style))
                 except Exception as e:
                     print(f"⚠️ Paragraph creation error: {e}")
                     story.append(Paragraph("Error rendering text.", styles["Normal"]))
@@ -387,10 +393,8 @@ class DocumentUploadView(APIView):
             return ""
 
         max_chunk = 4000
-        if len(text) <= max_chunk:
-            translated = TranslationService.translate(text=text, source_lang=source_lang, target_lang=target_lang, mode="text-text")
-            return translated or text
-
+        
+        # Split by double newlines first (paragraphs)
         paragraphs = text.split("\n\n")
         chunks = []
         current_chunk = ""
@@ -400,12 +404,23 @@ class DocumentUploadView(APIView):
             if not paragraph:
                 continue
 
+            # ✅ FIX: Safe splitting by spaces to avoid breaking multi-byte Unicode characters
             if len(paragraph) > max_chunk:
                 if current_chunk:
                     chunks.append(current_chunk.strip())
                     current_chunk = ""
-                for start in range(0, len(paragraph), max_chunk):
-                    chunks.append(paragraph[start:start + max_chunk].strip())
+                
+                words = paragraph.split(' ')
+                temp_chunk = ""
+                for word in words:
+                    if len(temp_chunk) + len(word) + 1 <= max_chunk:
+                        temp_chunk += (" " if temp_chunk else "") + word
+                    else:
+                        if temp_chunk:
+                            chunks.append(temp_chunk.strip())
+                        temp_chunk = word
+                if temp_chunk:
+                    chunks.append(temp_chunk.strip())
                 continue
 
             proposed_length = len(current_chunk) + len(paragraph) + 2
