@@ -137,6 +137,7 @@ Quill includes a complete **browser-to-backend speech pipeline**.
 
 ## Speech Workflow
 
+```text
 🎤 Microphone
       ↓
 🌐 Browser MediaRecorder
