@@ -1225,7 +1225,7 @@ const ProfileEditModal = ({
         const token = getToken();
         const response =
           await fetch(
-            `${API_BASE}/api/auth/otp/request/`,
+            `${API_BASE}/auth/otp/request/`,
             {
               method: "POST",
               headers: {
@@ -1360,7 +1360,7 @@ const ProfileEditModal = ({
           getToken();
         const response =
           await fetch(
-            `${API_BASE}/api/auth/otp/verify/`,
+            `${API_BASE}/auth/otp/verify/`,
             {
               method: "POST",
               headers: {
@@ -2012,7 +2012,7 @@ const ApiConfigModal = ({
                     event.target.value,
                 })
               }
-              placeholder={process.env.REACT_APP_API_URL || "https://your-backend.onrender.com"}
+              placeholder={process.env.REACT_APP_API_URL || "https://quill-a52m.onrender.com"}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white"
             />
             <p className="mt-1 text-xs text-slate-500">
@@ -2438,7 +2438,7 @@ export default function SettingsPage() {
       try {
         let response =
           await fetch(
-            `${API_BASE}/api/auth/me/`,
+            `${API_BASE}/auth/me/`,
             {
               headers: {
                 Authorization:
@@ -2455,7 +2455,7 @@ export default function SettingsPage() {
           if (refreshed) {
             response =
               await fetch(
-                `${API_BASE}/api/auth/me/`,
+                `${API_BASE}/auth/me/`,
                 {
                   headers: {
                     Authorization:
@@ -2615,7 +2615,7 @@ export default function SettingsPage() {
         try {
           let response =
             await fetch(
-              `${API_BASE}/api/auth/account/activity/`,
+              `${API_BASE}/auth/account/activity/`,
               {
                 method: "GET",
                 headers: {
@@ -2635,7 +2635,7 @@ export default function SettingsPage() {
             if (refreshed) {
               response =
                 await fetch(
-                  `${API_BASE}/api/auth/account/activity/`,
+                  `${API_BASE}/auth/account/activity/`,
                   {
                     method:
                       "GET",
@@ -2948,7 +2948,7 @@ export default function SettingsPage() {
           try {
             const response =
               await fetch(
-                `${API_BASE}/api/auth/settings/`,
+                `${API_BASE}/auth/settings/`,
                 {
                   method:
                     "PATCH",
@@ -3007,7 +3007,7 @@ export default function SettingsPage() {
           getToken();
         const response =
           await fetch(
-            `${API_BASE}/api/auth/otp/toggle/`,
+            `${API_BASE}/auth/otp/toggle/`,
             {
               method:
                 "POST",
@@ -3199,7 +3199,7 @@ export default function SettingsPage() {
           getToken();
         const response =
           await fetch(
-            `${API_BASE}/api/auth/account/delete/`,
+            `${API_BASE}/auth/account/delete/`,
             {
               method:
                 "DELETE",
@@ -3270,7 +3270,7 @@ export default function SettingsPage() {
         if (token) {
           const response =
             await fetch(
-              `${API_BASE}/api/auth/account/reset-settings/`,
+              `${API_BASE}/auth/account/reset-settings/`,
               {
                 method:
                   "POST",
@@ -3468,7 +3468,7 @@ export default function SettingsPage() {
 
           const response =
             await fetch(
-              `${API_BASE}/api/auth/profile/`,
+              `${API_BASE}/auth/profile/`,
               {
                 method:
                   "PATCH",
@@ -3597,7 +3597,7 @@ export default function SettingsPage() {
         try {
           const response =
             await fetch(
-              `${API_BASE}/api/auth/password/change/`,
+              `${API_BASE}/auth/password/change/`,
               {
                 method:
                   "POST",
