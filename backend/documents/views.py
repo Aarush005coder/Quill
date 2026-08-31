@@ -46,27 +46,37 @@ from history.utils import save_to_history
 
 
 # ═════════════════════════════════════════════════════════════
-# HELPER: TEXT CLEANING
+# HELPER: TEXT CLEANING (UPGRADED FOR STABILITY)
 # ═════════════════════════════════════════════════════════════
 
 def clean_extracted_text(text):
     """
-    Garbage characters, control codes, aur extra spaces ko remove karta hai
-    taaki translation aur PDF generation sahi se ho sake.
+    Aggressively cleans PDF extraction artifacts to prevent 
+    page explosion and layout breaking in PDF generators.
     """
     if not text:
         return ""
     
-    # 1. Remove weird control characters (jo ■ ya + ban jate hain)
+    # 1. Remove invisible control characters
     text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', text)
     
-    # 2. Multiple newlines ko max 2 newlines tak limit karein
+    # 2. Normalize all types of newlines to \n
+    text = text.replace('\r\n', '\n').replace('\r', '\n')
+    
+    # 3. Replace 3 or more newlines with exactly 2 newlines (one blank line)
     text = re.sub(r'\n{3,}', '\n\n', text)
     
-    # 3. Multiple spaces ko single space mein badlein (except newlines)
-    text = re.sub(r' +', ' ', text)
-    
-    return text.strip()
+    # 4. Clean up spaces on each line and remove completely empty lines
+    lines = text.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        # Replace multiple spaces with a single space and strip edges
+        line = re.sub(r' +', ' ', line).strip()
+        if line:  # Only keep non-empty lines
+            cleaned_lines.append(line)
+            
+    # Join with double newline to preserve paragraph structure
+    return "\n\n".join(cleaned_lines)
 
 
 # ═════════════════════════════════════════════════════════════
@@ -125,7 +135,7 @@ class DocumentProcessor:
 
     @staticmethod
     def create_output(text, output_format, output_path, original_name):
-        # Ensure text is clean before writing
+        # Ensure text is aggressively cleaned right before generating output
         text = clean_extracted_text(text)
 
         if output_format == "txt":
@@ -170,15 +180,22 @@ class DocumentProcessor:
                             continue
                 
                 if not font_loaded:
+                    print("⚠️ WARNING: No Unicode font found. Falling back to Helvetica (Unicode may show as squares).")
                     pdf.set_font('Helvetica', '', 11)
-                    print("⚠️ WARNING: No Unicode font found. Falling back to Helvetica.")
                 
-                # Text ko lines mein split karke add karein (multi_cell auto word-wrap karta hai)
-                for line in text.split('\n\n'):
-                    line = line.strip()
-                    if line:
-                        pdf.multi_cell(0, 8, line)
-                        pdf.ln(2)
+                # Split by paragraphs to maintain structure
+                paragraphs = text.split('\n\n')
+                for para in paragraphs:
+                    para = para.strip()
+                    if not para:
+                        continue
+                    
+                    # Additional safety: remove any stray control characters that might break multi_cell layout
+                    safe_para = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', para)
+                    
+                    # multi_cell automatically handles word wrapping and page breaks safely
+                    pdf.multi_cell(0, 8, safe_para)
+                    pdf.ln(1) # Small space between paragraphs
                 
                 pdf.output(output_path)
                 return output_path
@@ -327,7 +344,7 @@ class DocumentUploadView(APIView):
         try:
             self._process_document(doc)
         except Exception as exc:
-            print("Document processing error:", exc)
+            print(f"❌ Document processing error: {exc}")
             try:
                 doc.mark_failed(str(exc))
             except Exception:
@@ -369,10 +386,13 @@ class DocumentUploadView(APIView):
             user.monthly_document_pages = current_val + estimated_pages
             user.save(update_fields=["monthly_document_pages"])
 
+        print(f"🔄 Starting translation: {doc.source_lang} -> {doc.target_lang}")
         translated = self._translate_long_text(extracted, doc.source_lang, doc.target_lang)
-        if not translated:
+        
+        if not translated or not translated.strip():
             raise ValueError("Translation returned no text.")
 
+        print("✅ Translation successful. Generating output file...")
         doc.translated_text_preview = translated[:2000]
         doc.save(update_fields=["translated_text_preview"])
 
@@ -411,7 +431,7 @@ class DocumentUploadView(APIView):
             )
             print("✅ SUCCESS: Document history saved!")
         except Exception as e:
-            print("❌ Document History save error:", e)
+            print(f"❌ Document History save error: {e}")
 
         try:
             from users.models import Notification
@@ -429,7 +449,7 @@ class DocumentUploadView(APIView):
         if not text or not text.strip():
             return ""
 
-        max_chunk = 4000
+        max_chunk = 3500  # Slightly reduced to be safer for translation APIs
         
         # Split by double newlines first (paragraphs)
         paragraphs = text.split("\n\n")
@@ -474,14 +494,24 @@ class DocumentUploadView(APIView):
         translated_chunks = []
         for index, chunk in enumerate(chunks, start=1):
             try:
-                print(f"Translating document chunk {index}/{len(chunks)}...")
+                print(f"Translating document chunk {index}/{len(chunks)} (Length: {len(chunk)})...")
                 translated = TranslationService.translate(text=chunk, source_lang=source_lang, target_lang=target_lang, mode="text-text")
-                translated_chunks.append(translated if translated else chunk)
+                
+                # ✅ CRITICAL FIX: Check if translation actually returned valid text
+                if translated and translated.strip():
+                    translated_chunks.append(translated.strip())
+                    print(f"✅ Chunk {index} translated successfully.")
+                else:
+                    print(f"⚠️ Chunk {index} translation returned EMPTY. Keeping original text.")
+                    translated_chunks.append(chunk)
+                    
             except Exception as exc:
-                print(f"Chunk {index} translation error:", exc)
+                print(f"❌ Chunk {index} translation FAILED: {exc}. Keeping original text.")
                 translated_chunks.append(chunk)
 
-        return "\n\n".join(translated_chunks)
+        final_text = "\n\n".join(translated_chunks)
+        print(f"✅ Translation complete. Final text length: {len(final_text)}")
+        return final_text
 
 
 # ═════════════════════════════════════════════════════════════
@@ -642,4 +672,4 @@ def delete_template(request, pk):
         template.delete()
         return Response({"success": True, "message": "Template deleted."})
     except DocumentTemplate.DoesNotExist:
-        return Response({"success": False, "message": "Template not found."}, status=status.HTTP_404_NOT_FOUND)git add backend/documents/views.py backend/requirements.txt
+        return Response({"success": False, "message": "Template not found."}, status=status.HTTP_404_NOT_FOUND)
