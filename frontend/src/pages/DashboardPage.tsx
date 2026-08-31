@@ -2,6 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useTheme } from '../App';
 import {
+  Languages,
+  FileText,
+  Wrench,
+  Check,
+  ArrowRight,
+  Upload,
+  Sparkles,
+  Globe2,
+  BarChart3,
+  ChevronRight,
+  Star,
+  History,
+  Boxes,
+} from 'lucide-react';
+import {
   addActivity,
   getActivities,
   getDashboardStats,
@@ -13,7 +28,7 @@ import {
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isDark } = useTheme();
+  useTheme();
 
   const [stats, setStats] = useState<DashboardStats>(
     getDashboardStats()
@@ -136,9 +151,7 @@ const DashboardPage: React.FC = () => {
     if (type === 'translation') {
       return (
         <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M5 5h10M10 3v2m1 8.5A18 18 0 0 1 6 9m8 9h6M12 21l5-10 5 10M14 18h6" />
-          </svg>
+          <Languages className="w-5 h-5" strokeWidth={1.8} />
         </div>
       );
     }
@@ -146,10 +159,7 @@ const DashboardPage: React.FC = () => {
     if (type === 'document') {
       return (
         <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M14 2v6h6M8 13h8M8 17h6" />
-          </svg>
+          <FileText className="w-5 h-5" strokeWidth={1.8} />
         </div>
       );
     }
@@ -157,19 +167,14 @@ const DashboardPage: React.FC = () => {
     if (type === 'tool') {
       return (
         <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-2.8-.6-.6-2.8z" />
-          </svg>
+          <Wrench className="w-5 h-5" strokeWidth={1.8} />
         </div>
       );
     }
 
     return (
       <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M7 7h10v10H7z" />
-          <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M7 12H4m16 0h-3M12 7V4m0 16v-3" />
-        </svg>
+        <Boxes className="w-5 h-5" strokeWidth={1.8} />
       </div>
     );
   };
@@ -195,9 +200,7 @@ const DashboardPage: React.FC = () => {
           "
         >
           <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <Check className="w-4 h-4" strokeWidth={2.5} />
           </div>
           <p className="text-sm font-semibold">
             Quill Pro Coming Soon! Stay Tuned.
@@ -247,18 +250,14 @@ const DashboardPage: React.FC = () => {
                 className="group inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-slate-950 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-slate-950/10 dark:shadow-blue-600/20 transition-all duration-200 hover:-translate-y-0.5"
               >
                 Start translating
-                <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
-                </svg>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" strokeWidth={2} />
               </button>
 
               <button
                 onClick={handleDocumentUpload}
                 className="inline-flex items-center gap-3 px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-sm font-semibold hover:border-blue-300 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L8 8m4-4 4 4M5 20h14" />
-                </svg>
+                <Upload className="w-4 h-4" strokeWidth={1.8} />
                 Upload document
               </button>
             </div>
@@ -275,7 +274,9 @@ const DashboardPage: React.FC = () => {
               </div>
 
               <div className="flex gap-3 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-                <div className="w-9 h-9 shrink-0 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">🌐</div>
+                <div className="w-9 h-9 shrink-0 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <Globe2 className="w-4 h-4" strokeWidth={1.8} />
+                </div>
                 <div>
                   <p className="text-xs text-slate-400">English</p>
                   <p className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-100">Hello, world!</p>
@@ -285,7 +286,9 @@ const DashboardPage: React.FC = () => {
               <div className="h-px bg-slate-200 dark:bg-slate-700 my-3" />
 
               <div className="flex gap-3 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-                <div className="w-9 h-9 shrink-0 rounded-lg bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">文</div>
+                <div className="w-9 h-9 shrink-0 rounded-lg bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                  <Languages className="w-4 h-4" strokeWidth={1.8} />
+                </div>
                 <div>
                   <p className="text-xs text-slate-400">Spanish</p>
                   <p className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-100">¡Hola, mundo!</p>
@@ -293,7 +296,9 @@ const DashboardPage: React.FC = () => {
               </div>
 
               <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                <span className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center"></span>
+                <span className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.8} />
+                </span>
                 <span>
                   Powered by{' '}
                   <strong className="text-slate-600 dark:text-slate-300">AI translation</strong>
@@ -350,7 +355,9 @@ const DashboardPage: React.FC = () => {
               <p className="text-sm text-slate-400">Current plan</p>
               <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{plan}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-500 flex items-center justify-center">✦</div>
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                <Star className="w-5 h-5" strokeWidth={1.8} />
+              </div>
           </div>
 
           {/* ✅ UPDATED: Shows green toast instead of navigating */}
@@ -417,7 +424,9 @@ const DashboardPage: React.FC = () => {
 
           {activities.length === 0 ? (
             <div className="px-5 py-12 text-center">
-              <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-xl">✦</div>
+              <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-xl">
+              <History className="w-5 h-5 text-slate-500 dark:text-slate-300" strokeWidth={1.8} />
+            </div>
               <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">No activity yet</p>
               <p className="mt-1 text-xs text-slate-400">Start translating to see your activity here.</p>
               <button
@@ -447,7 +456,9 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-6 shadow-sm">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">✦</div>
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <Sparkles className="w-5 h-5" strokeWidth={1.8} />
+          </div>
           <h3 className="mt-5 text-lg font-bold text-slate-900 dark:text-white">Make your first translation</h3>
           <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
             Paste some text, select your languages and let quill handle the rest.
@@ -459,7 +470,7 @@ const DashboardPage: React.FC = () => {
             Start translating →
           </button>
           <div className="mt-6 flex items-center gap-2 text-xs text-slate-400">
-            <span>🌎</span>
+            <Globe2 className="w-4 h-4 text-slate-400" strokeWidth={1.8} />
             Fast, simple and multilingual
           </div>
         </div>
@@ -510,9 +521,9 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, description, icon }) => {
   const icons = {
-    translate: <span className="text-blue-600 dark:text-blue-400">文</span>,
-    document: <span className="text-violet-600 dark:text-violet-400"></span>,
-    chart: <span className="text-emerald-600 dark:text-emerald-400">↗</span>,
+    translate: <Languages className="w-5 h-5 text-blue-600 dark:text-blue-400" strokeWidth={1.8} />,
+    document: <FileText className="w-5 h-5 text-violet-600 dark:text-violet-400" strokeWidth={1.8} />,
+    chart: <BarChart3 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.8} />,
   };
 
   return (
@@ -550,9 +561,9 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onC
   };
 
   const iconContent = {
-    translate: '文',
-    document: '▤',
-    tools: '✣',
+    translate: <Languages className="w-5 h-5" strokeWidth={1.8} />,
+    document: <FileText className="w-5 h-5" strokeWidth={1.8} />,
+    tools: <Wrench className="w-5 h-5" strokeWidth={1.8} />,
   };
 
   return (
@@ -567,9 +578,7 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onC
         <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
         <p className="text-xs text-slate-400 mt-0.5">{description}</p>
       </div>
-      <svg className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6" />
-      </svg>
+      <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" strokeWidth={2} />
     </button>
   );
 };
