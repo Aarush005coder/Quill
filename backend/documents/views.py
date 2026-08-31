@@ -142,71 +142,108 @@ class DocumentProcessor:
             return output_path
 
         elif output_format == "pdf":
-            document = SimpleDocTemplate(
-                output_path, 
-                pagesize=letter, 
-                rightMargin=45, 
-                leftMargin=45, 
-                topMargin=45, 
-                bottomMargin=45
-            )
-            
-            # ✅ FIX: Render (Ubuntu) ke liye guaranteed Unicode fonts
-            font_paths = [
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",          # Render/Ubuntu default
-                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", # Alternative Ubuntu
-                "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",      # Agar Noto install ho
-                "C:\\Windows\\Fonts\\arial.ttf",                            # Windows fallback
-                "/System/Library/Fonts/Helvetica.ttc",                      # Mac fallback
-            ]
-            
-            font_found = False
-            for font_path in font_paths:
-                if os.path.exists(font_path):
-                    try:
-                        pdfmetrics.registerFont(TTFont('UnicodeFont', font_path))
-                        font_found = True
-                        print(f"✅ Successfully loaded Unicode font: {font_path}")
-                        break
-                    except Exception as e:
-                        print(f"⚠️ Font load error for {font_path}: {e}")
-                        continue
-            
-            styles = getSampleStyleSheet()
-            
-            # ✅ FIX: Explicitly create a custom ParagraphStyle for Unicode
-            if font_found:
-                custom_style = ParagraphStyle(
-                    name='UnicodeNormal',
-                    parent=styles['Normal'],
-                    fontName='UnicodeFont',
-                    fontSize=11,
-                    leading=14,
-                    wordWrap='CJK' # Better wrapping for complex scripts like Hindi
+            # ✅ PRIMARY FIX: FPDF2 use karein jo Unicode ko behtar handle karta hai
+            try:
+                from fpdf import FPDF
+                
+                pdf = FPDF()
+                pdf.add_page()
+                
+                # Unicode fonts (Render/Ubuntu par available)
+                font_paths = [
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                    "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+                ]
+                
+                font_loaded = False
+                for font_path in font_paths:
+                    if os.path.exists(font_path):
+                        try:
+                            pdf.add_font('UnicodeFont', '', font_path, uni=True)
+                            pdf.set_font('UnicodeFont', '', 11)
+                            font_loaded = True
+                            print(f"✅ FPDF2 successfully loaded: {font_path}")
+                            break
+                        except Exception as e:
+                            print(f"⚠️ FPDF2 font error for {font_path}: {e}")
+                            continue
+                
+                if not font_loaded:
+                    pdf.set_font('Helvetica', '', 11)
+                    print("⚠️ WARNING: No Unicode font found. Falling back to Helvetica.")
+                
+                # Text ko lines mein split karke add karein (multi_cell auto word-wrap karta hai)
+                for line in text.split('\n\n'):
+                    line = line.strip()
+                    if line:
+                        pdf.multi_cell(0, 8, line)
+                        pdf.ln(2)
+                
+                pdf.output(output_path)
+                return output_path
+                
+            except ImportError:
+                print("⚠️ FPDF2 not installed. Falling back to ReportLab.")
+                # FALLBACK: ReportLab code (agar fpdf2 install na ho)
+                document = SimpleDocTemplate(
+                    output_path, 
+                    pagesize=letter, 
+                    rightMargin=45, 
+                    leftMargin=45, 
+                    topMargin=45, 
+                    bottomMargin=45
                 )
-            else:
-                custom_style = styles['Normal']
-                print("⚠️ WARNING: No Unicode font found. Falling back to default.")
-            
-            story = []
-            for paragraph in text.split("\n\n"):
-                paragraph = paragraph.strip()
-                if not paragraph:
-                    continue
                 
-                # Escape HTML special chars, but keep Unicode intact
-                safe_text = escape(paragraph)
+                font_paths = [
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                    "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+                ]
                 
-                try:
-                    story.append(Paragraph(safe_text, custom_style))
-                except Exception as e:
-                    print(f"⚠️ Paragraph creation error: {e}")
-                    story.append(Paragraph("Error rendering text.", styles["Normal"]))
+                font_found = False
+                for font_path in font_paths:
+                    if os.path.exists(font_path):
+                        try:
+                            pdfmetrics.registerFont(TTFont('UnicodeFont', font_path))
+                            font_found = True
+                            print(f"✅ ReportLab successfully loaded: {font_path}")
+                            break
+                        except Exception as e:
+                            print(f"⚠️ Font load error for {font_path}: {e}")
+                            continue
                 
-                story.append(Spacer(1, 10))
-            
-            document.build(story)
-            return output_path
+                styles = getSampleStyleSheet()
+                if font_found:
+                    custom_style = ParagraphStyle(
+                        name='UnicodeNormal',
+                        parent=styles['Normal'],
+                        fontName='UnicodeFont',
+                        fontSize=11,
+                        leading=14,
+                        wordWrap='CJK'
+                    )
+                else:
+                    custom_style = styles['Normal']
+                    print("⚠️ WARNING: No Unicode font found. Falling back to default.")
+                
+                story = []
+                for paragraph in text.split("\n\n"):
+                    paragraph = paragraph.strip()
+                    if not paragraph:
+                        continue
+                    
+                    safe_text = escape(paragraph)
+                    try:
+                        story.append(Paragraph(safe_text, custom_style))
+                    except Exception as e:
+                        print(f"⚠️ Paragraph creation error: {e}")
+                        story.append(Paragraph("Error rendering text.", styles["Normal"]))
+                    
+                    story.append(Spacer(1, 10))
+                
+                document.build(story)
+                return output_path
 
         elif output_format == "html":
             paragraphs_html = []
@@ -605,4 +642,4 @@ def delete_template(request, pk):
         template.delete()
         return Response({"success": True, "message": "Template deleted."})
     except DocumentTemplate.DoesNotExist:
-        return Response({"success": False, "message": "Template not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"success": False, "message": "Template not found."}, status=status.HTTP_404_NOT_FOUND)git add backend/documents/views.py backend/requirements.txt
