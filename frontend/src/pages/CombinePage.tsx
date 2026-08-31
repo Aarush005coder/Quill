@@ -938,32 +938,23 @@ export default function CombinePage() {
   ========================================================= */
   const downloadFromHistory = async (item: HistoryItem) => {
     if (!item.download_url) return;
-    
-    // 1. API_BASE mein pehle se '/api' hai
     const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
     const token = await getAuthToken(API_BASE);
     if (!token) return;
-    
     try {
-      // 2. download_url se shuru ka '/api/' hata do taaki double na bane
+      // ✅ FIX: Yahan bhi '/api/' ko hata do taaki double na bane
       let cleanUrl = item.download_url;
       if (cleanUrl.startsWith('/api/')) {
-        cleanUrl = cleanUrl.substring(4); // '/api/' ko hata dega, sirf '/combine/...' bachega
+        cleanUrl = cleanUrl.substring(4);
       }
       
-      // 3. Ab API_BASE aur cleanUrl ko jodo
-      const finalUrl = `${API_BASE}${cleanUrl}`;
-      console.log("✅ Final Download URL:", finalUrl); // Debugging ke liye
-      
-      const response = await fetch(finalUrl, { 
+      const response = await fetch(`${API_BASE}${cleanUrl}`, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
       
       if (response.ok) { 
         triggerDownload(await response.blob(), item.output_name || "download"); 
         showToast("success", "Download successfully!"); 
-      } else {
-        console.error("❌ Download failed with status:", response.status);
       }
     } catch (error) { 
       console.error("Download error:", error); 
@@ -1089,7 +1080,14 @@ export default function CombinePage() {
       const data = await response.json();
       if (!data.success || !data.download_url) throw new Error(data.message || "No download URL");
       setProcessStep("Preparing download...");
-      const downloadResponse = await fetch(`${API_BASE}${data.download_url}`, { headers });
+      
+      // ✅ FIX: Agar backend ne '/api/' pehle se laga diya hai, toh usko hata do
+      let cleanDownloadUrl = data.download_url;
+      if (cleanDownloadUrl.startsWith('/api/')) {
+        cleanDownloadUrl = cleanDownloadUrl.substring(4); // '/api/' ko hata dega
+      }
+      
+      const downloadResponse = await fetch(`${API_BASE}${cleanDownloadUrl}`, { headers });
       if (!downloadResponse.ok) throw new Error("Download failed.");
       const blob = await downloadResponse.blob();
       const contentDisposition = downloadResponse.headers.get("Content-Disposition");
