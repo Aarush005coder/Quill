@@ -3,7 +3,9 @@ from .models import DocumentUpload, DocumentTemplate
 
 
 class DocumentUploadSerializer(serializers.ModelSerializer):
-    file_size_display = serializers.CharField(source='file_size_display', read_only=True)
+    # ✅ FIX: Redundant 'source' keyword argument hata diya gaya hai
+    file_size_display = serializers.CharField(read_only=True)
+    
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     file_type_display = serializers.CharField(source='get_file_type_display', read_only=True)
     time_ago = serializers.SerializerMethodField()
@@ -37,4 +39,3 @@ class DocumentTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentTemplate
         fields = ['id', 'name', 'source_lang', 'target_lang', 'output_format', 'preserve_formatting', 'created_at']
-        
