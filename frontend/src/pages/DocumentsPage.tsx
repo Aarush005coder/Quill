@@ -7,7 +7,10 @@ if (typeof window !== "undefined") {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`;
 }
 
-const API_BASE = `${(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "")}/api`;
+const API_BASE = (() => {
+  const raw = String(process.env.REACT_APP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+  return raw.endsWith("/api") ? raw : `${raw}/api`;
+})();
 const MAX_DOCUMENT_MB = 250;
 const MAX_DOCUMENT_BYTES = MAX_DOCUMENT_MB * 1024 * 1024;
 
@@ -467,6 +470,7 @@ const measureFlowScales = async (htmls: string[], targetHeight: number, width: n
 };
 
 const buildPagedDocument = async (title: string, pagesData: PageData[], translatedPages?: string[], opts?: { word?: boolean }): Promise<string> => {
+  // pagesData is intentionally rendered one-for-one: one source page becomes one output section.
   const first = pagesData[0];
   const pw = Math.round(first?.width || 612); const ph = Math.round(first?.height || 792);
   const useOverlayAll = Boolean(translatedPages) && pagesData.every((p) => p.backgroundSrc);
@@ -486,9 +490,11 @@ const buildPagedDocument = async (title: string, pagesData: PageData[], translat
   const htmlOpen = opts?.word ? `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">` : `<!DOCTYPE html><html>`;
   return `${htmlOpen}<head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>` +
     `body{margin:0;padding:0;font-family:"Segoe UI","Nirmala UI","Noto Sans",Arial,sans-serif;color:#1e293b}` +
-    `.doc-page{position:relative;overflow:hidden;page-break-after:always;break-after:page;margin:0 auto}` +
-    `.doc-page:last-child{page-break-after:auto}` +
+    `.doc-page{position:relative;display:block;overflow:hidden;box-sizing:border-box;width:${pw}px;height:${ph}px;min-width:${pw}px;min-height:${ph}px;max-width:${pw}px;max-height:${ph}px;page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid;margin:0}` +
+    `.doc-page:last-child{page-break-after:auto;break-after:auto}` +
+    `.doc-page *{box-sizing:border-box}` +
     `@page{size:${pw}px ${ph}px;margin:0}` +
+    `@media print{html,body{margin:0!important;padding:0!important;width:${pw}px!important}body{overflow:visible!important}.doc-page{margin:0!important;overflow:hidden!important;page-break-after:always!important;break-after:page!important;page-break-inside:avoid!important;break-inside:avoid!important}.doc-page:last-child{page-break-after:auto!important;break-after:auto!important}}` +
     `</style></head><body>${body}</body></html>`;
 };
 
@@ -669,53 +675,121 @@ const DocumentsPage: React.FC = () => {
   const onInputChange = (event: React.ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (file) handleFile(file); event.target.value = ""; };
   const removeDoc = () => { if (doc?.objectUrl) URL.revokeObjectURL(doc.objectUrl); setDoc(null); setProcessed(false); setTranslations({}); resetProgress(); setStageMessage(""); setViewTab("original"); setCurrentPage(1); };
 
-  const translateViaAPI = async (text: string, target: string, pageNumber?: number): Promise<string> => {
+  const translateViaAPI = async (
+    text: string,
+    target: string,
+    pageNumber?: number,
+  ): Promise<string> => {
     let token = localStorage.getItem("access_token");
     const refreshToken = localStorage.getItem("refresh_token");
     const { protectedText, restore } = protectText(text);
     const sanitizedText = protectedText.replace(/\u0000/g, "").trim();
-    if (!sanitizedText) throw new Error("No valid text.");
 
-    try {
-      const src = originalLang === "auto" ? "auto" : originalLang;
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(src)}&tl=${encodeURIComponent(target)}&dt=t&q=${encodeURIComponent(sanitizedText)}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        const parts = (Array.isArray(data) ? data[0] || [] : []).map((seg: any) => (seg && seg[0] ? String(seg[0]) : "")).join("");
-        if (parts.trim()) return restore(parts);
-      }
-    } catch (e) { console.warn("[GTX] Failed", e); }
+    if (!sanitizedText) {
+      return "";
+    }
 
+    // 1) Use the Django page-translation endpoint first. This keeps the
+    // translation tied to the exact source page and avoids the old
+    // whole-document upload flow that could change the page count.
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (token) headers.Authorization = `Bearer ${token}`;
+
       let response = await fetch(`${API_BASE}/translation/document-page/`, {
-        method: "POST", headers,
-        body: JSON.stringify({ source_text: sanitizedText, source_lang: originalLang, target_lang: target, page_number: pageNumber || 1 }),
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          source_text: sanitizedText,
+          source_lang: originalLang,
+          target_lang: target,
+          page_number: pageNumber || 1,
+        }),
       });
+
       if (response.status === 401 && refreshToken) {
         try {
-          const refreshRes = await fetch(`${API_BASE}/token/refresh/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refresh: refreshToken }) });
+          const refreshRes = await fetch(`${API_BASE}/token/refresh/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh: refreshToken }),
+          });
+
           if (refreshRes.ok) {
             const refreshData = await refreshRes.json();
             const newToken = String(refreshData.access || "");
+
             if (newToken) {
-              token = newToken; localStorage.setItem("access_token", newToken);
+              token = newToken;
+              localStorage.setItem("access_token", newToken);
               headers.Authorization = `Bearer ${newToken}`;
-              response = await fetch(`${API_BASE}/translation/document-page/`, { method: "POST", headers, body: JSON.stringify({ source_text: sanitizedText, source_lang: originalLang, target_lang: target, page_number: pageNumber || 1 }) });
+
+              response = await fetch(`${API_BASE}/translation/document-page/`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                  source_text: sanitizedText,
+                  source_lang: originalLang,
+                  target_lang: target,
+                  page_number: pageNumber || 1,
+                }),
+              });
             }
           }
-        } catch {}
+        } catch (refreshError) {
+          console.warn("[TOKEN REFRESH] Failed", refreshError);
+        }
       }
+
       if (response.ok) {
         const payload = await response.json();
-        const translated = payload?.data?.translated_text || payload?.translated_text || "";
-        if (typeof translated === "string" && translated.trim()) return restore(translated);
-      }
-    } catch (error) { console.warn("[BACKEND] Failed.", error); }
+        const translated =
+          payload?.data?.translated_text || payload?.translated_text || "";
 
-    const translated = await myMemoryTranslate(sanitizedText, originalLang, target);
+        if (typeof translated === "string" && translated.trim()) {
+          return restore(translated.trim());
+        }
+      } else if (response.status === 401) {
+        console.warn("[DOCUMENT TRANSLATION] Authentication required.");
+      }
+    } catch (error) {
+      console.warn("[BACKEND DOCUMENT PAGE] Failed", error);
+    }
+
+    // 2) Google web fallback.
+    try {
+      const src = originalLang === "auto" ? "auto" : originalLang;
+      const url =
+        `https://translate.googleapis.com/translate_a/single?client=gtx` +
+        `&sl=${encodeURIComponent(src)}` +
+        `&tl=${encodeURIComponent(target)}` +
+        `&dt=t&q=${encodeURIComponent(sanitizedText)}`;
+
+      const res = await fetch(url);
+
+      if (res.ok) {
+        const data = await res.json();
+        const parts = (Array.isArray(data) ? data[0] || [] : [])
+          .map((seg: any) => (seg && seg[0] ? String(seg[0]) : ""))
+          .join("");
+
+        if (parts.trim()) {
+          return restore(parts.trim());
+        }
+      }
+    } catch (error) {
+      console.warn("[GTX] Failed", error);
+    }
+
+    // 3) MyMemory final fallback.
+    const translated = await myMemoryTranslate(
+      sanitizedText,
+      originalLang,
+      target,
+    );
+
     return restore(translated);
   };
 
@@ -773,82 +847,136 @@ const DocumentsPage: React.FC = () => {
 
   // ✅ UPDATED: Safe 401 handling without guessing refresh URLs
   const handleProcess = async () => {
-    if (!doc) { toast.error("Please upload a document first."); return; }
-    if (!targets.length) { toast.error("Select at least one target language."); return; }
+    if (!doc) {
+      toast.error("Please upload a document first.");
+      return;
+    }
+
+    if (!targets.length) {
+      toast.error("Select at least one target language.");
+      return;
+    }
+
     if (processing) return;
+
+    const sourcePages = doc.pagesData || [];
+
+    // For PDFs/text documents we keep a strict 1:1 page mapping.
+    // Every source page produces exactly one translated page string.
+    if (!sourcePages.length) {
+      toast.error(
+        doc.kind === "image"
+          ? "Image translation needs readable/extracted text. Please use a text PDF or document."
+          : "No readable document pages were extracted."
+      );
+      return;
+    }
 
     setProcessing(true);
     setProcessed(false);
     resetProgress();
-    setStageMessage("Uploading document to secure server...");
-    await smoothProgress(20, 600);
+    setStageMessage("Preparing your document pages...");
+    setBackendDownloadUrl("");
+    setBackendFileName("");
+
+    const totalWork = Math.max(targets.length * sourcePages.length, 1);
+    let completedWork = 0;
 
     try {
-      const formData = new FormData();
-      formData.append("file", doc.file);
-      formData.append("source_lang", originalLang);
-      formData.append("target_lang", targets[0]); 
-      formData.append("output_format", "pdf");
+      const allTranslations: Record<string, string[]> = {};
 
-      setStageMessage("Processing and translating...");
-      await smoothProgress(50, 1000);
+      stopCycling();
+      setStageMessage(
+        `Translating 1/${targets.length} → ${LANGS.find((l) => l.code === targets[0])?.name || targets[0]}… (page 1/${sourcePages.length})`
+      );
 
-      const token = localStorage.getItem("access_token");
-      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      for (let langIndex = 0; langIndex < targets.length; langIndex++) {
+        const target = targets[langIndex];
+        const targetName = LANGS.find((l) => l.code === target)?.name || target;
+        const translatedPages: string[] = new Array(sourcePages.length).fill("");
 
-      const response = await fetch(`${API_BASE}/documents/upload/`, {
-        method: "POST",
-        headers,
-        body: formData,
-      });
+        cycleInfoRef.current = {
+          langIdx: langIndex + 1,
+          totalLangs: targets.length,
+          langName: targetName,
+          totalPages: sourcePages.length,
+        };
 
-      // 🔥 FIX: Agar 401 aaya, toh seedha user ko login karne bhej do
-      if (response.status === 401) {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        throw new Error("Your session has expired. Please log in again.");
+        estimateMinRef.current = Math.max(
+          1,
+          Math.ceil(
+            sourcePages.reduce((sum, page) => sum + (page.text?.length || 0), 0) / 1200
+          )
+        );
+
+        setStageMessage(
+          `Translating ${langIndex + 1}/${targets.length} → ${targetName}… (page 1/${sourcePages.length})`
+        );
+
+        for (let pageIndex = 0; pageIndex < sourcePages.length; pageIndex++) {
+          const page = sourcePages[pageIndex];
+          const pageNumber = pageIndex + 1;
+
+          setStageMessage(
+            `Translating ${langIndex + 1}/${targets.length} → ${targetName}… (page ${pageNumber}/${sourcePages.length})`
+          );
+
+          try {
+            translatedPages[pageIndex] = await translatePagePreservingLayout(
+              page,
+              target,
+              pageNumber,
+            );
+          } catch (pageError) {
+            console.error(
+              `Translation failed for ${targetName}, page ${pageNumber}:`,
+              pageError,
+            );
+            // Keep the original page text rather than dropping a page.
+            translatedPages[pageIndex] = page.text || "";
+          }
+
+          completedWork += 1;
+          updateProgress((completedWork / totalWork) * 100);
+        }
+
+        // Enforce the exact source page count even if a future translation
+        // provider returns unexpected data.
+        allTranslations[target] = translatedPages.slice(0, sourcePages.length);
+        setTranslations({ ...allTranslations });
+        setViewLang(target);
       }
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || err.detail || "Upload failed");
+      // Final safety check: every selected language must contain exactly the
+      // same number of translated pages as the original document.
+      for (const target of targets) {
+        const pages = allTranslations[target] || [];
+        if (pages.length !== sourcePages.length) {
+          allTranslations[target] = Array.from(
+            { length: sourcePages.length },
+            (_, index) => pages[index] ?? sourcePages[index]?.text ?? "",
+          );
+        }
       }
 
-      const result = await response.json();
-      if (!result.success || !result.data) {
-        throw new Error("Processing failed on server.");
-      }
-
-      await smoothProgress(100, 600);
-      
-      const backendData = result.data;
-      setBackendDownloadUrl(`${API_BASE.replace('/api', '')}${backendData.translated_file}`);
-      setBackendFileName(backendData.original_name.replace(/\.[^.]+$/, "") + "_translated." + backendData.output_format);
-      
-      setTranslations({
-        [targets[0]]: Array(doc.pages).fill("Processed on server")
-      });
-      
+      setTranslations(allTranslations);
+      updateProgress(100);
       setViewLang(targets[0]);
       setViewTab("translated");
       setCurrentPage(1);
       setProcessed(true);
       setProjects((value) => value + 1);
-      
-      fetchDocHistory(); 
-      
-      toast.success(`Document translated successfully!`);
+
+      // Keep the existing document-history refresh feature.
+      await fetchDocHistory();
+
+      toast.success(
+        `Document translated successfully — ${sourcePages.length} source page${sourcePages.length === 1 ? "" : "s"} preserved.`,
+      );
     } catch (error: any) {
-      console.error(error);
+      console.error("Document processing error:", error);
       const errorMsg = error?.message || "Translation failed.";
       toast.error(errorMsg);
-      
-      // Agar session expire ka error hai, toh user ko login page par redirect kar do (optional but recommended)
-      if (errorMsg.includes("session has expired")) {
-        setTimeout(() => {
-          window.location.href = "/login"; // Apne actual login route se replace karein agar alag hai
-        }, 2000);
-      }
     } finally {
       setProcessing(false);
       stopCycling();
