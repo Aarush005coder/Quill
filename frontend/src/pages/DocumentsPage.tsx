@@ -606,17 +606,25 @@ const DocumentsPage: React.FC = () => {
   };
 
   // ✅ NEW: Fetch Document History
+  // ✅ UPDATED: Robust history fetch with better error handling
   const fetchDocHistory = async () => {
     setHistoryLoading(true);
     const token = localStorage.getItem("access_token");
-    if (!token) { setHistoryLoading(false); return; }
+    if (!token) { 
+      setHistoryLoading(false); 
+      return; 
+    }
     try {
       const res = await fetch(`${API_BASE}/history/?type=documents&page_size=5`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       if (res.ok) {
         const data = await res.json();
         setDocHistory(data.data || []);
+      } else if (res.status === 401) {
+        console.warn("History fetch 401: Token might be expired. Please re-login.");
+        setDocHistory([]);
       }
     } catch (error) {
       console.error("Document history fetch error:", error);
@@ -762,7 +770,7 @@ const DocumentsPage: React.FC = () => {
     }, 2500);
   };
 
-  // ✅ UPDATED: Now uses backend upload to ensure history is saved
+  // ✅ UPDATED: Added Auto Token Refresh logic to prevent 401 errors
   const handleProcess = async () => {
     if (!doc) { toast.error("Please upload a document first."); return; }
     if (!targets.length) { toast.error("Select at least one target language."); return; }
@@ -784,16 +792,51 @@ const DocumentsPage: React.FC = () => {
       setStageMessage("Processing and translating...");
       await smoothProgress(50, 1000);
 
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`${API_BASE}/documents/upload/`, {
+      let token = localStorage.getItem("access_token");
+      const refreshToken = localStorage.getItem("refresh_token");
+      
+      let headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      let response = await fetch(`${API_BASE}/documents/upload/`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers,
         body: formData,
       });
 
+      // 🔥 AUTO REFRESH LOGIC: Agar 401 aaya, toh naya token le kar dobara try karega
+      if (response.status === 401 && refreshToken) {
+        try {
+          const refreshRes = await fetch(`${API_BASE}/token/refresh/`, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify({ refresh: refreshToken }) 
+          });
+          
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            const newToken = String(refreshData.access || "");
+            if (newToken) {
+              token = newToken; 
+              localStorage.setItem("access_token", newToken);
+              headers.Authorization = `Bearer ${newToken}`;
+              
+              // Retry the upload with the new valid token
+              response = await fetch(`${API_BASE}/documents/upload/`, {
+                method: "POST",
+                headers,
+                body: formData,
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Token refresh failed:", err);
+        }
+      }
+
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || "Upload failed");
+        throw new Error(err.message || err.detail || "Upload failed");
       }
 
       const result = await response.json();
@@ -817,7 +860,7 @@ const DocumentsPage: React.FC = () => {
       setProcessed(true);
       setProjects((value) => value + 1);
       
-      fetchDocHistory(); // Refresh history since backend saved it!
+      fetchDocHistory(); 
       
       toast.success(`Document translated successfully!`);
     } catch (error: any) {
