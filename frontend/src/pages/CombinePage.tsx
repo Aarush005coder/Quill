@@ -303,7 +303,7 @@ const tools = [
 const categories = ["All Tools", "Merge", "Convert", "Optimize", "Edit"];
 
 const MIN_MERGE_FILES = 2;
-const MAX_MERGE_FILES = 10;
+const MAX_MERGE_FILES = 30;
 
 /* =========================================================
 HELPERS
