@@ -1191,6 +1191,14 @@ export default function CombinePage() {
       setProcessStep("Uploading & processing...");
       const headers = { Authorization: `Bearer ${token}` };
       const response = await fetch(`${API_BASE}${activeTool.endpoint}`, { method: "POST", headers, body: formData });
+      
+      // ✅ FIX: Explicit 401 handling to clear stale tokens
+      if (response.status === 401) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        throw new Error("Session expired. Please log in again.");
+      }
+      
       if (!response.ok) { const error = await response.json().catch(() => ({})); throw new Error(error.message || `Processing failed (${response.status})`); }
       const data = await response.json();
       if (!data.success || !data.download_url) throw new Error(data.message || "No download URL");
@@ -1413,7 +1421,7 @@ export default function CombinePage() {
         </>
       )}
 
-      {/* ✅ NEW: IMAGE COMPRESSOR SIDEBAR */}
+      {/* ✅ NEW: IMAGE COMPRESSOR SIDEBAR (FIXED SCROLLBAR) */}
       {isImageCompressor && selectedFiles.length > 0 && !processedBlob && (
         <>
           <button type="button" onClick={() => setCompressOpen(true)} className={`fixed right-0 top-1/2 z-[360] -translate-y-1/2 flex h-12 w-9 items-center justify-center rounded-l-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 ${compressOpen ? "pointer-events-none opacity-0" : "opacity-100"}`}>
@@ -1460,7 +1468,7 @@ export default function CombinePage() {
                   </div>
                 </div>
 
-                {/* Target Size */}
+                {/* Target Size (FIXED LAYOUT TO PREVENT SCROLLBAR) */}
                 <div>
                   <label className="mb-2 flex items-center gap-2 text-sm font-bold"><Zap className="h-4 w-4 text-amber-500" />TARGET FILE SIZE</label>
                   <div className="relative grid grid-cols-2 rounded-xl bg-slate-100 dark:bg-slate-700 p-1 mb-3">
@@ -1469,22 +1477,23 @@ export default function CombinePage() {
                     <button type="button" onClick={() => setToolOptions({ ...toolOptions, image_size_mode: "range" })} className={`relative z-10 py-2.5 text-xs font-bold ${toolOptions.image_size_mode === "range" ? "text-amber-600" : "text-slate-500"}`}>Size Range</button>
                   </div>
 
-                  <div className="flex gap-2 mb-2">
+                  <div className="space-y-2 mb-2">
                      {toolOptions.image_size_mode === "exact" ? (
-                        <>
-                          <input type="number" value={toolOptions.image_target_size_min} onChange={(e) => setToolOptions({ ...toolOptions, image_target_size_min: e.target.value })} placeholder="Target size" className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-2.5 text-sm" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input type="number" value={toolOptions.image_target_size_min} onChange={(e) => setToolOptions({ ...toolOptions, image_target_size_min: e.target.value })} placeholder="Target size" className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-2.5 text-sm" />
                           <select value={toolOptions.image_size_unit} onChange={(e) => setToolOptions({ ...toolOptions, image_size_unit: e.target.value })} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-2 py-2.5 text-sm font-bold text-amber-600">
                             <option value="KB">KB</option>
                             <option value="MB">MB</option>
                             <option value="GB">GB</option>
                           </select>
-                        </>
+                        </div>
                      ) : (
                         <>
-                          <input type="number" value={toolOptions.image_target_size_min} onChange={(e) => setToolOptions({ ...toolOptions, image_target_size_min: e.target.value })} placeholder="Min" className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-2.5 text-sm" />
-                          <span className="flex items-center text-slate-400 text-xs">to</span>
-                          <input type="number" value={toolOptions.image_target_size_max} onChange={(e) => setToolOptions({ ...toolOptions, image_target_size_max: e.target.value })} placeholder="Max" className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-2.5 text-sm" />
-                          <select value={toolOptions.image_size_unit} onChange={(e) => setToolOptions({ ...toolOptions, image_size_unit: e.target.value })} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-2 py-2.5 text-sm font-bold text-amber-600">
+                          <div className="grid grid-cols-2 gap-2">
+                            <input type="number" value={toolOptions.image_target_size_min} onChange={(e) => setToolOptions({ ...toolOptions, image_target_size_min: e.target.value })} placeholder="Min" className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-2.5 text-sm" />
+                            <input type="number" value={toolOptions.image_target_size_max} onChange={(e) => setToolOptions({ ...toolOptions, image_target_size_max: e.target.value })} placeholder="Max" className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-3 py-2.5 text-sm" />
+                          </div>
+                          <select value={toolOptions.image_size_unit} onChange={(e) => setToolOptions({ ...toolOptions, image_size_unit: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 px-2 py-2.5 text-sm font-bold text-amber-600 text-center">
                             <option value="KB">KB</option>
                             <option value="MB">MB</option>
                             <option value="GB">GB</option>
