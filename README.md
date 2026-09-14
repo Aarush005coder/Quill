@@ -243,6 +243,7 @@ The **Combine & Convert workspace** contains document, image, and file transform
 - 📄 **Image to PDF**
 - 🔄 **Image Converter**
 - 🧩 **N-up PDF / image-sheet workflows**
+- 📒 **Image Compressor**
 
 ### 📦 Supported Image Formats
 
