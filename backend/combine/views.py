@@ -494,6 +494,191 @@ class ImageConvertView(APIView):
 
 
 # ═════════════════════════════════════════════════════════════════
+# IMAGE COMPRESSOR (NEWLY ADDED)
+# ═════════════════════════════════════════════════════════════════
+
+class ImageCompressView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if "file" not in request.FILES:
+            return Response({"success": False, "message": "Image file required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        uploaded = request.FILES["file"]
+        if not uploaded.name.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff")):
+            return Response({"success": False, "message": "Unsupported image format."}, status=status.HTTP_400_BAD_REQUEST)
+
+        compress_mode = request.data.get("compress_mode", "compress")
+        target_width = request.data.get("target_width")
+        target_height = request.data.get("target_height")
+        size_mode = request.data.get("size_mode", "exact")
+        size_unit = request.data.get("size_unit", "KB")
+        target_size = request.data.get("target_size")
+        target_size_min = request.data.get("target_size_min")
+        target_size_max = request.data.get("target_size_max")
+
+        operation = CombineOperation.objects.create(
+            user=request.user,
+            operation_type="image_compress",
+            input_count=1,
+            options={
+                "compress_mode": compress_mode,
+                "target_width": target_width,
+                "target_height": target_height,
+                "size_mode": size_mode,
+                "size_unit": size_unit,
+                "target_size": target_size,
+                "target_size_min": target_size_min,
+                "target_size_max": target_size_max,
+            }
+        )
+
+        try:
+            image = Image.open(uploaded).convert("RGB")
+            original_format = image.format or "JPEG"
+            save_format = "JPEG" if original_format in ["JPEG", "JPG"] else "PNG" if original_format == "PNG" else "WEBP"
+
+            # 1. Resize if dimensions are provided
+            if target_width or target_height:
+                try:
+                    tw = int(target_width) if target_width else None
+                    th = int(target_height) if target_height else None
+                    if tw and th:
+                        image = image.resize((tw, th), Image.Resampling.LANCZOS)
+                    elif tw:
+                        w_percent = (tw / float(image.size[0]))
+                        h_size = int((float(image.size[1]) * float(w_percent)))
+                        image = image.resize((tw, h_size), Image.Resampling.LANCZOS)
+                    elif th:
+                        h_percent = (th / float(image.size[1]))
+                        w_size = int((float(image.size[0]) * float(h_percent)))
+                        image = image.resize((w_size, th), Image.Resampling.LANCZOS)
+                except (ValueError, TypeError, ZeroDivisionError):
+                    pass
+
+            # 2. Adjust quality to meet size target
+            unit_multiplier = {"KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024}.get(size_unit, 1024)
+            
+            target_bytes = None
+            min_bytes = None
+            max_bytes = None
+
+            if size_mode == "exact" and target_size:
+                try:
+                    target_bytes = int(float(target_size) * unit_multiplier)
+                except (ValueError, TypeError):
+                    pass
+            elif size_mode == "range" and target_size_min and target_size_max:
+                try:
+                    min_bytes = int(float(target_size_min) * unit_multiplier)
+                    max_bytes = int(float(target_size_max) * unit_multiplier)
+                except (ValueError, TypeError):
+                    pass
+
+            # For precise size targeting, JPEG is much more reliable than PNG
+            if (target_bytes is not None or (min_bytes is not None and max_bytes is not None)) and save_format == "PNG":
+                save_format = "JPEG"
+
+            output_buffer = BytesIO()
+            
+            if target_bytes is not None or (min_bytes is not None and max_bytes is not None):
+                # Binary search for quality
+                low, high = 1, 100
+                best_buffer = None
+                best_quality = 90
+                best_diff = float('inf')
+                
+                for _ in range(8): # 8 iterations is enough for 1-100 range
+                    mid = (low + high) // 2
+                    temp_buffer = BytesIO()
+                    image.save(temp_buffer, format=save_format, quality=mid, optimize=True)
+                    size = temp_buffer.tell()
+                    
+                    if target_bytes is not None:
+                        diff = abs(size - target_bytes)
+                        if diff < best_diff:
+                            best_diff = diff
+                            best_buffer = temp_buffer
+                            best_quality = mid
+                        
+                        if size < target_bytes:
+                            low = mid + 1
+                        else:
+                            high = mid - 1
+                    else:
+                        if min_bytes <= size <= max_bytes:
+                            best_buffer = temp_buffer
+                            best_quality = mid
+                            break
+                        elif size < min_bytes:
+                            low = mid + 1
+                        else:
+                            high = mid - 1
+                
+                if best_buffer:
+                    output_buffer = best_buffer
+                else:
+                    default_quality = 85 if compress_mode == "compress" else 95
+                    image.save(output_buffer, format=save_format, quality=best_quality if best_quality else default_quality, optimize=True)
+            else:
+                default_quality = 85 if compress_mode == "compress" else 95
+                image.save(output_buffer, format=save_format, quality=default_quality, optimize=True)
+
+            output_bytes = output_buffer.getvalue()
+            if not output_bytes:
+                raise ValueError("Failed to generate compressed image.")
+
+            original_base = os.path.splitext(uploaded.name)[0]
+            ext = "jpg" if save_format == "JPEG" else save_format.lower()
+            output_filename = f"{original_base}_compressed.{ext}"
+            output_path = os.path.join(user_output_dir(request.user), f"compressed_{uuid.uuid4().hex}.{ext}")
+            
+            with open(output_path, "wb") as out:
+                out.write(output_bytes)
+
+            operation.output_file = relative_media_path(output_path)
+            operation.output_name = output_filename
+            operation.output_size = os.path.getsize(output_path)
+            operation.status = "completed"
+            operation.completed_at = timezone.now()
+            operation.save()
+
+            # ✅ ADD UNIFIED HISTORY
+            save_to_history(
+                user=request.user,
+                history_type="combine",
+                title="Image Compressor",
+                description=f"Processed {uploaded.name} to {operation.output_name}",
+                source_app="combine",
+                source_model="CombineOperation",
+                source_id=str(operation.id),
+                metadata={
+                    "conversionType": "Image Compressor",
+                    "compress_mode": compress_mode,
+                    "output": operation.output_name,
+                    "size": operation.output_size
+                },
+                output_file=operation.output_file,
+                status="completed"
+            )
+
+            return Response({
+                "success": True,
+                "message": "Image processed successfully.",
+                "download_url": f"/api/combine/{operation.id}/download/",
+                "operation_id": str(operation.id),
+                "output_name": operation.output_name,
+                "output_size": operation.output_size,
+            }, status=status.HTTP_200_OK)
+
+        except Exception as exc:
+            operation.status = "failed"
+            operation.error_message = str(exc)
+            operation.save(update_fields=["status", "error_message"])
+            return Response({"success": False, "message": "Image compression failed.", "error": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ═════════════════════════════════════════════════════════════════
 # WORD MERGE
 # ═════════════════════════════════════════════════════════════════
 
