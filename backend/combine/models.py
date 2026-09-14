@@ -61,6 +61,7 @@ class CombineOperation(models.Model):
         ("image_merge", "Image Merge"),
         ("image_to_pdf", "Image to PDF"),
         ("image_convert", "Image Converter"),
+        ("image_compress", "Image Compressor"),  # ✅ NEW ADDED
 
         # ----------------------------------------------------
         # WORD
@@ -259,6 +260,18 @@ class CombineOperation(models.Model):
     # {
     #     "sheet": "all",
     #     "format": "pdf"
+    # }
+    #
+    # IMAGE COMPRESSOR  <-- ✅ NEW ADDED EXAMPLE
+    # {
+    #     "compress_mode": "compress",
+    #     "target_width": 800,
+    #     "target_height": 600,
+    #     "size_mode": "exact",
+    #     "target_size": 500,
+    #     "target_size_min": 200,
+    #     "target_size_max": 800,
+    #     "size_unit": "KB"
     # }
     # ========================================================
 
