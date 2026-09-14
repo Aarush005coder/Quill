@@ -5,6 +5,7 @@ from .views import (
     ImageMergeView,
     ImageToPDFView,
     ImageConvertView,
+    ImageCompressView,  # ✅ NEW: Image Compressor View Added
     WordMergeView,
     PDFToWordView,
     PDFToExcelView,
@@ -46,6 +47,13 @@ urlpatterns = [
         "image-convert/",
         ImageConvertView.as_view(),
         name="image-convert",
+    ),
+
+    # ✅ NEW: Image Compressor URL Path
+    path(
+        "image-compress/",
+        ImageCompressView.as_view(),
+        name="image-compress",
     ),
 
     path(
